@@ -16,12 +16,15 @@
 
 #![cfg(feature = "full")]
 
+mod common;
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use common::Source;
 use knownbots::{Bot, RefreshFailure, Validator, ValidatorOptions};
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -35,40 +38,6 @@ const GROUPS: usize = 2;
 
 /// The number of the groups that finished their sources.
 static GROUPS_DONE: AtomicUsize = AtomicUsize::new(0);
-
-/// The kind of the source an entry of the registry depends on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Source {
-    /// A published address space, downloaded from the documents of the entry.
-    List,
-    /// The reverse DNS of the vendor.
-    Dns,
-    /// The prefixes the entry states itself.
-    Static,
-}
-
-impl Source {
-    /// The name of the kind in the report.
-    fn name(self) -> &'static str {
-        match self {
-            Source::List => "list",
-            Source::Dns => "dns",
-            Source::Static => "static",
-        }
-    }
-}
-
-impl std::fmt::Display for Source {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.name())
-    }
-}
-
-impl Serialize for Source {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.name())
-    }
-}
 
 /// The outcome of the check for one source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -262,20 +231,9 @@ fn registry() -> Vec<Bot> {
     knownbots::load_bots(None).expect("the embedded registry must load")
 }
 
-/// The kind of the source an entry depends on.
-fn source_of(bot: &Bot) -> Source {
-    if !bot.urls.is_empty() {
-        Source::List
-    } else if bot.rdns {
-        Source::Dns
-    } else {
-        Source::Static
-    }
-}
-
 /// The row of an entry the check did not reach yet.
 fn seed(bot: &Bot) -> Row {
-    let source = source_of(bot);
+    let source = Source::of(bot);
     let (state, detail) = match source {
         // An entry that states its own prefixes has no upstream to check.
         Source::Static => (
@@ -402,7 +360,7 @@ async fn the_published_lists_are_read() {
 
     let mut tasks = tokio::task::JoinSet::new();
     for bot in registry() {
-        if source_of(&bot) != Source::List {
+        if Source::of(&bot) != Source::List {
             continue;
         }
         let validator = Arc::clone(&validator);
@@ -440,7 +398,7 @@ async fn the_published_lists_are_read() {
 async fn the_domains_of_the_crawlers_resolve() {
     let mut tasks = tokio::task::JoinSet::new();
     for bot in registry() {
-        if source_of(&bot) != Source::Dns {
+        if Source::of(&bot) != Source::Dns {
             continue;
         }
         let name = bot.name.clone();

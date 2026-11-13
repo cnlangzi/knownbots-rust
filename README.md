@@ -330,9 +330,16 @@ urls:
 | `domains` | The domains the reverse DNS of the crawler has to end in. |
 | `rdns` | Whether the crawler is verified by its reverse DNS. |
 
-The parsers the crate knows are `google`, `openai`, `uptimerobot`, `ahrefs`,
-`amazon` and `txt` (plain CIDR lines). A definition without a `parser` is read
-with the text parser.
+The parsers the crate knows are:
+
+- `google`
+- `openai`
+- `uptimerobot`
+- `ahrefs`
+- `amazon`
+- `txt` — plain CIDR lines
+
+A definition without a `parser` is read with the text parser.
 
 A crawler that is verified by its reverse DNS names the domains its addresses
 resolve to:
@@ -345,7 +352,7 @@ ua: "Baiduspider"
 rdns: true
 domains:
   - "baidu.com"
-  - "baiduspider.com"
+  - "baidu.jp"
 ```
 
 ## Crawlers of your own

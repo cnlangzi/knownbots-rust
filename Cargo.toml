@@ -12,7 +12,8 @@ keywords = ["security", "crawler", "bot", "user-agent", "ip"]
 categories = ["security"]
 # The published crate holds the sources, the definitions it embeds and the
 # license. The tests, the workflows and the scripts of the repository are not
-# part of it.
+# part of it. The README is the documentation of the crate: `src/lib.rs`
+# includes it, so it has to be part of the package.
 include = [
     "src/**",
     "conf.d/**",

@@ -1,15 +1,19 @@
 //! The README of the crate, held in step with the crate itself.
 //!
-//! The README is the documentation of the crate: the examples in it are the
-//! doctests of the crate, and the table of the crawlers it holds has to match
-//! the registry the crate loads.
+//! The README is the documentation of the crate: its examples are the doctests
+//! of the crate, and the facts it states about the crate are checked here.
+
+mod common;
 
 use std::path::Path;
 
-use knownbots::Bot;
+use common::Source;
 
 /// The header row of the table of the crawlers.
 const HEADER: &str = "| bot | vendor | kind | marker | source |";
+
+/// The line that opens the list of the parsers of the crate.
+const PARSERS: &str = "The parsers the crate knows are:";
 
 /// The README of the crate.
 fn readme() -> String {
@@ -33,36 +37,26 @@ fn readme_rows(markdown: &str) -> Vec<Vec<String>> {
         if !line.starts_with('|') {
             break;
         }
+        // A row opens and closes with a `|`, so the cells are what lies
+        // between them. A row that holds more than the five cells of the
+        // header is not a row of this table.
         let cells: Vec<String> = line
+            .trim_matches('|')
             .split('|')
-            .skip(1)
             .map(|cell| cell.trim().to_string())
             .collect();
         // The separator of the table holds no cell.
         if cells.first().is_some_and(|cell| cell == "---") {
             continue;
         }
-        // The row closes with a `|`, so its last field is empty.
-        let cells = &cells[..cells.len() - 1];
         assert_eq!(
             cells.len(),
             5,
             "a row of the table holds five cells: {line}"
         );
-        rows.push(cells.to_vec());
+        rows.push(cells);
     }
     rows
-}
-
-/// The kind of the source a crawler depends on.
-fn source_of(bot: &Bot) -> &'static str {
-    if !bot.urls.is_empty() {
-        "list"
-    } else if bot.rdns {
-        "dns"
-    } else {
-        "static"
-    }
 }
 
 /// The rows of the table of the crawlers, as the registry holds them.
@@ -75,7 +69,7 @@ fn registry_rows() -> Vec<Vec<String>> {
                 bot.vendor.clone(),
                 format!("{:?}", bot.kind),
                 bot.ua.clone(),
-                source_of(bot).to_string(),
+                Source::of(bot).name().to_string(),
             ]
         })
         .collect()
@@ -104,6 +98,59 @@ fn the_table_of_the_crawlers_holds_the_registry() {
         assert_eq!(
             row, expected,
             "row {index} of the table of the README does not match the registry"
+        );
+    }
+}
+
+/// A crawler the table calls `static` states its own prefixes.
+///
+/// The label is a promise: a crawler with no list and no reverse DNS that
+/// states no prefix has no address space at all, and calling it `static`
+/// would hide that.
+#[test]
+fn a_static_crawler_states_its_own_prefixes() {
+    let bots = knownbots::load_bots(None).expect("the embedded registry must load");
+    for bot in &bots {
+        if Source::of(bot).name() == "static" {
+            assert!(
+                !bot.custom.is_empty(),
+                "the crawler {} has no address space at all",
+                bot.name
+            );
+        }
+    }
+}
+
+/// The parsers the README names are the parsers the crate knows.
+///
+/// The README is the documentation of the crate, so a parser it names that the
+/// crate does not know is a promise the crate does not keep.
+#[test]
+fn the_parsers_of_the_readme_are_known_to_the_crate() {
+    let markdown = readme();
+    let lines: Vec<&str> = markdown.lines().collect();
+    let start = lines
+        .iter()
+        .position(|line| line.starts_with(PARSERS))
+        .expect("the README must name the parsers of the crate");
+
+    let mut parsers = Vec::new();
+    for line in &lines[start + 1..] {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let Some(name) = line.strip_prefix("- `") else {
+            break;
+        };
+        parsers.push(name.split('`').next().unwrap_or_default().to_string());
+    }
+
+    assert!(!parsers.is_empty(), "the README must name the parsers");
+    for parser in parsers {
+        assert!(
+            knownbots::feed::is_known_parser(&parser),
+            "the README names the parser {parser}, which the crate does not know"
         );
     }
 }
