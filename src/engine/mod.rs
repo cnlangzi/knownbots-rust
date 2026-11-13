@@ -112,7 +112,10 @@ impl Validator {
         #[cfg(feature = "full")]
         let (rdns_tx, rdns_rx) = mpsc::channel(crate::worker::RDNS_QUEUE);
         #[cfg(feature = "full")]
-        let http = crate::http::build_client()?;
+        let http = match config.http_client.clone() {
+            Some(client) => client,
+            None => crate::http::build_client()?,
+        };
 
         Ok(Arc::new(Self {
             root: config.root,
@@ -150,9 +153,20 @@ impl Validator {
     /// The scheduler runs an **immediate** refresh, so that the bots that are
     /// backed by a document are usable within seconds of the start of the
     /// process. A failed refresh is retried with an exponential backoff instead
-    /// of waiting a whole day. The method is idempotent and needs a runtime.
+    /// of waiting a whole day.
+    ///
+    /// The method needs a runtime to run the work on: without one it answers
+    /// `false` and the work never starts. It is idempotent — the second call
+    /// answers `false` as well.
     #[cfg(feature = "full")]
+    #[must_use = "the background work only runs when the call is made"]
     pub fn start_background(self: &Arc<Self>) -> bool {
+        if tokio::runtime::Handle::try_current().is_err() {
+            tracing::error!(
+                "knownbots: the background work needs a runtime; call it from within one"
+            );
+            return false;
+        }
         if self
             .workers_started
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)

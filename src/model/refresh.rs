@@ -19,6 +19,7 @@ pub enum BotRefreshState {
 
 /// The health of the address space of a bot.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct BotRefreshStatus {
     /// The id of the bot (`googlebot`).
     pub name: String,

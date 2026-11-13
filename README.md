@@ -13,6 +13,11 @@ address the vendor does not publish is not that crawler.
 The crate is a Rust port of the upstream library
 [`github.com/cnlangzi/knownbots`](https://github.com/cnlangzi/knownbots).
 
+The crate needs Rust **1.88** or newer.
+
+The API of the `0.1` line is young: the version is a promise of compatibility
+*within* the line, and the next line may change it.
+
 ## Install
 
 ```sh
@@ -84,11 +89,33 @@ match result.status {
 ```
 
 The background work — the download of the lists and the reverse lookups — starts
-separately, once a runtime exists:
+separately, and it needs a runtime to run on:
 
 ```rust
 validator.start_background();
 ```
+
+The method answers `false` when there is no runtime and when it was called
+before; it never panics.
+
+A host that reaches the vendors through a proxy, or that trusts a root store of
+its own, hands the crate a client of its own:
+
+```rust
+use knownbots::reqwest::header::HeaderMap;
+
+let mut headers = HeaderMap::new();
+headers.insert("x-knownbots", "yes".parse().unwrap());
+
+let validator = Validator::new(ValidatorOptions {
+    root: "/var/lib/knownbots".into(),
+    http_client: Some(knownbots::HttpClient::builder().default_headers(headers).build().unwrap()),
+    ..ValidatorOptions::default()
+})?;
+```
+
+The crate re-exports the HTTP stack, so the host needs no dependency of its own
+— and cannot end up with a second copy of it.
 
 ## The registry
 
@@ -188,6 +215,10 @@ for status in validator.refresh_status() {
 | `root` | `./knownbots` | The directory that holds the caches and the definitions of the host. |
 | `fail_limit` | `1000` | How many failed reverse lookups a crawler remembers. |
 | `refresh_interval` | `24h` | How often the published lists are refreshed. |
+| `http_client` | none | The client the lists are downloaded with. The crate builds one when the host supplies none. |
+
+Build the options with `..ValidatorOptions::default()`, so that an option the
+crate adds later does not break the host.
 
 ## License
 

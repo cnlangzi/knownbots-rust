@@ -22,6 +22,15 @@ pub struct ValidatorOptions {
     pub fail_limit: usize,
     /// How often the published lists are refreshed.
     pub refresh_interval: Duration,
+    /// The client the published lists are downloaded with.
+    ///
+    /// The crate builds a client of its own when the host supplies none. A host
+    /// that reaches the vendors through a proxy, or that trusts its own root
+    /// store, supplies a client of its own — built with
+    /// [`HttpClient`](crate::HttpClient), so that it needs no dependency of
+    /// its own.
+    #[cfg(feature = "full")]
+    pub http_client: Option<crate::HttpClient>,
 }
 
 impl Default for ValidatorOptions {
@@ -30,6 +39,8 @@ impl Default for ValidatorOptions {
             root: PathBuf::from(DEFAULT_ROOT),
             fail_limit: DEFAULT_FAIL_LIMIT,
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
+            #[cfg(feature = "full")]
+            http_client: None,
         }
     }
 }
@@ -39,6 +50,8 @@ pub(crate) struct Config {
     pub(crate) root: PathBuf,
     pub(crate) fail_limit: usize,
     pub(crate) refresh_interval: Duration,
+    #[cfg(feature = "full")]
+    pub(crate) http_client: Option<crate::HttpClient>,
 }
 
 impl From<ValidatorOptions> for Config {
@@ -47,6 +60,8 @@ impl From<ValidatorOptions> for Config {
             root: options.root,
             fail_limit: options.fail_limit,
             refresh_interval: options.refresh_interval,
+            #[cfg(feature = "full")]
+            http_client: options.http_client,
         }
     }
 }

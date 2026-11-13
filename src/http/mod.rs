@@ -4,6 +4,19 @@ use std::time::Duration;
 
 use crate::error::{ConfigError, RefreshFailure};
 
+/// The HTTP client the crate downloads the lists with.
+///
+/// The crate re-exports the type, so that a host that supplies a client of its
+/// own does not have to depend on `reqwest` itself — and cannot end up with a
+/// second copy of it.
+pub use reqwest::Client as HttpClient;
+
+/// The HTTP stack of the crate.
+///
+/// The crate re-exports it, so that a host that builds a client of its own
+/// needs no dependency of its own.
+pub use reqwest;
+
 /// The time the client waits for the connection to a vendor.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 

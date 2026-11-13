@@ -48,6 +48,10 @@ pub enum BotKind {
 ///
 /// The prefixes of the bot live behind a lock, so that the background refresh
 /// can swap them without blocking the readers of the request path for long.
+///
+/// The type is read-only for the host: a bot comes from the registry of the
+/// crate, never from the host.
+#[non_exhaustive]
 pub struct Bot {
     /// The id of the bot in the registry (`googlebot`).
     pub name: String,

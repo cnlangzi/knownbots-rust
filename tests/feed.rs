@@ -9,7 +9,7 @@ use std::net::IpAddr;
 use std::sync::Arc;
 
 use knownbots::{BotRefreshState, RefreshFailure, Validator, ValidatorOptions};
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Compresses a body the way a vendor that serves a gzip encoded list does.
@@ -404,5 +404,54 @@ async fn the_prefixes_of_the_documents_that_answered_are_kept() {
         "{failure:?}"
     );
     // The prefixes of the document that answered are kept.
+    assert_eq!(prefix_count(&validator), 1);
+}
+
+/// The client of the host is the client the crate downloads the lists with.
+#[tokio::test]
+async fn the_client_of_the_host_is_used() {
+    use knownbots::reqwest::header::HeaderMap;
+
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .and(header("x-knownbots", "yes"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(r#"{"prefixes":[{"ipv4Prefix":"1.2.3.0/24"}]}"#),
+        )
+        .mount(&server)
+        .await;
+
+    let directory = tempfile::tempdir().expect("a temporary directory");
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).expect("the override directory");
+    std::fs::write(
+        conf.join("testbot.yaml"),
+        format!(
+            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n",
+            server.uri()
+        ),
+    )
+    .expect("the definition");
+
+    let mut headers = HeaderMap::new();
+    headers.insert("x-knownbots", "yes".parse().expect("a header value"));
+    let client = knownbots::HttpClient::builder()
+        .default_headers(headers)
+        .build()
+        .expect("a client");
+
+    let validator = Validator::new(ValidatorOptions {
+        root: directory.path().to_path_buf(),
+        http_client: Some(client),
+        ..ValidatorOptions::default()
+    })
+    .expect("a validator");
+
+    // The endpoint answers only when the header of the client of the host is
+    // there, so a list means that the client of the host was used.
+    assert!(validator.refresh_bot("testbot").await.is_none());
     assert_eq!(prefix_count(&validator), 1);
 }

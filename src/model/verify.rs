@@ -20,13 +20,20 @@ pub enum VerifyStatus {
 ///
 /// Only [`VerifyStatus::Verified`] says that the request is the bot it claims to
 /// be. Every other outcome means the request is not that bot.
+///
+/// The identity of the bot is only filled for a verified result: a request that
+/// names a bot but is not verified keeps the path free of the copy of a name
+/// that the host would throw away anyway.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct VerifyResult {
     /// The outcome of the verification.
     pub status: VerifyStatus,
-    /// The id of the matched bot (`googlebot`).
+    /// The id of the matched bot (`googlebot`), empty unless the request was
+    /// verified.
     pub name: String,
-    /// The organisation that owns the matched bot.
+    /// The organisation that owns the matched bot, empty unless the request was
+    /// verified.
     pub vendor: String,
     /// The category of the matched bot.
     pub kind: BotKind,
