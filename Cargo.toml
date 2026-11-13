@@ -2,7 +2,7 @@
 name = "knownbots"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.88"
 license = "MIT"
 description = "Verify known crawlers via User-Agent and published IP ranges"
 repository = "https://github.com/cnlangzi/knownbots-rust"

@@ -48,3 +48,4 @@ Read every sentence as a first-time reader. If removing the timestamp or context
 - Every file of `conf.d/` is listed in `EMBEDDED_CONFIGS`. The contract test checks that, and every other rule the definitions have to satisfy.
 - The tests never reach the internet. The endpoints of the vendors are mocked with `wiremock`.
 - The crate carries no vocabulary of a host: the labels of an admin panel belong to the host that uses the crate.
+- The declared `rust-version` is the true minimum the crate builds with. A release line is one promise — `^0.1.0` covers every `0.1.x` — and the toolchain of the consumer is part of that promise, so the floor is lowered whenever the code allows it and never raised inside a line.
