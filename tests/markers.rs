@@ -14,8 +14,9 @@
 //! the crawler that publishes it.
 //!
 //! The table is a snapshot of the documentation of the vendors, and it reaches
-//! no network: a vendor that renames its token is noticed by the
-//! provider-health workflow, not by this guard.
+//! no network: this guard cannot notice that a vendor has renamed its token,
+//! and neither can the provider-health workflow, which reads the sources of
+//! the registry and not the User-Agents of its crawlers.
 
 use std::collections::BTreeMap;
 use std::path::Path;

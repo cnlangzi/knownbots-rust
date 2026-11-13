@@ -188,8 +188,8 @@ never holds a lock that a background task holds for long.
    registry. The match is **byte-exact** and sits on a **word boundary**: the
    official markers are published in a fixed casing (`Googlebot`, never
    `googlebot`), and `MyGooglebot` does not match `Googlebot`. When several
-   markers match, the **longest** one wins, so `Applebot-Extended` is preferred
-   over `Applebot`.
+   markers match, the **longest** one wins, so `AdsBot-Google-Mobile` is
+   preferred over `AdsBot`.
 2. The address of the request has to fall into the address space of the matched
    crawler. The address space is the set of prefixes the vendor published, plus
    the prefixes the definition of the crawler states itself.
