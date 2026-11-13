@@ -1,5 +1,7 @@
 # knownbots
 
+[![crates.io](https://img.shields.io/crates/v/knownbots.svg)](https://crates.io/crates/knownbots)
+
 `knownbots` verifies whether a request that claims to be a known crawler really
 is one.
 
