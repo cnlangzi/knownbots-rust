@@ -43,6 +43,7 @@ Read every sentence as a first-time reader. If removing the timestamp or context
 - The verification model does not change: a `Verified` result needs the marker **and** the ownership of the address, and a request that cannot be verified fails closed.
 - The marker is matched byte-exact and on a word boundary; the longest marker wins.
 - The request path never awaits and never holds a lock that a background task holds for long. A reverse lookup happens off the request path.
+- The work of the crate runs on the worker thread of the crate, with a runtime of its own. The runtime of the host is never used for it, and the host needs no runtime for it.
 - A failure of a refresh is `Unreachable` when the environment is at fault and `Broken` when this crate is at fault. The two never change places.
 - An embedded definition of `conf.d/` is a fact of this repository: an incomplete one fails the load. A definition of a host is the business of the host: an incomplete one is skipped and reported.
 - Every file of `conf.d/` is listed in `EMBEDDED_CONFIGS`. The contract test checks that, and every other rule the definitions have to satisfy.

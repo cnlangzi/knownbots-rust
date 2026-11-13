@@ -19,6 +19,8 @@ use crate::error::ConfigError;
 /// refresh) writes the file. That avoids a full rewrite on every cold lookup
 /// under a crawl burst.
 pub struct RdnsCache {
+    /// The file the cache lives in.
+    #[cfg(feature = "full")]
     path: PathBuf,
     map: RwLock<Arc<HashMap<String, String>>>,
     dirty: AtomicBool,
@@ -33,6 +35,7 @@ impl RdnsCache {
         }
         let map = load_file(&path)?;
         Ok(Self {
+            #[cfg(feature = "full")]
             path,
             map: RwLock::new(Arc::new(map)),
             dirty: AtomicBool::new(false),
@@ -57,6 +60,7 @@ impl RdnsCache {
     }
 
     /// Drops the entries whose hostname no longer matches `domains`.
+    #[cfg(feature = "full")]
     pub fn prune(&self, domains: &[String]) {
         let mut guard = self.map.write();
         let before = guard.len();
@@ -82,6 +86,7 @@ impl RdnsCache {
     /// *after* the write would drop that concurrent `set` (the new entry is in
     /// memory, the flag is then forced false, and a crash before the next
     /// `set` loses it). A failed write puts the flag back.
+    #[cfg(feature = "full")]
     pub fn persist_if_dirty(&self) -> Result<(), ConfigError> {
         let snapshot = {
             let guard = self.map.write();
@@ -96,19 +101,9 @@ impl RdnsCache {
         }
         Ok(())
     }
-
-    /// Writes the cache to disk.
-    pub fn persist(&self) -> Result<(), ConfigError> {
-        let map = Arc::clone(&self.map.read());
-        write_map(&self.path, &map)
-    }
-
-    /// The number of addresses the cache holds.
-    pub fn size(&self) -> usize {
-        self.map.read().len()
-    }
 }
 
+#[cfg(feature = "full")]
 fn write_map(path: &Path, map: &HashMap<String, String>) -> Result<(), ConfigError> {
     let mut body = String::new();
     for (ip, host) in map.iter() {

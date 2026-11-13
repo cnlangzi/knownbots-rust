@@ -3,6 +3,7 @@
 use std::net::IpAddr;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use ipnet::IpNet;
 use parking_lot::RwLock;
@@ -73,11 +74,13 @@ pub struct Bot {
     pub rdns: bool,
     /// The prefixes of the bot: the ones of its definition and the ones of the
     /// documents it published.
-    pub prefixes: RwLock<Vec<IpNet>>,
+    pub(crate) prefixes: RwLock<Vec<IpNet>>,
     /// The reverse DNS cache of the bot.
-    pub rdns_cache: Option<Arc<RdnsCache>>,
+    pub(crate) rdns_cache: Option<Arc<RdnsCache>>,
     /// The addresses whose reverse lookup already failed.
-    pub fail_cache: Option<Arc<FailLru>>,
+    pub(crate) fail_cache: Option<Arc<FailLru>>,
+    /// When the address space was loaded.
+    pub(crate) loaded_at: RwLock<Option<SystemTime>>,
 }
 
 impl Bot {
@@ -135,7 +138,27 @@ impl Bot {
             prefixes: RwLock::new(custom),
             rdns_cache: None,
             fail_cache: None,
+            loaded_at: RwLock::new(None),
         }
+    }
+
+    /// The prefixes of the bot: the ones of its definition and the ones of the
+    /// documents it published.
+    pub fn prefixes(&self) -> Vec<IpNet> {
+        self.prefixes.read().clone()
+    }
+
+    /// The number of the prefixes of the bot.
+    pub fn prefix_count(&self) -> usize {
+        self.prefixes.read().len()
+    }
+
+    /// When the address space of the bot was loaded.
+    ///
+    /// The instant is the moment the document that holds the prefixes was
+    /// written, so that a host can tell how old the address space is.
+    pub fn loaded_at(&self) -> Option<SystemTime> {
+        *self.loaded_at.read()
     }
 
     /// Whether the address is covered by the prefixes of the bot.
@@ -159,6 +182,7 @@ impl Bot {
         merged.sort();
         merged.dedup();
         *self.prefixes.write() = merged;
+        *self.loaded_at.write() = Some(SystemTime::now());
     }
 
     /// Loads the prefixes of a previous run from `path`.
@@ -181,6 +205,10 @@ impl Bot {
         }
         if !nets.is_empty() {
             self.store_downloaded(nets);
+            // The age of the address space is the age of the file it came from.
+            if let Ok(modified) = std::fs::metadata(path).and_then(|metadata| metadata.modified()) {
+                *self.loaded_at.write() = Some(modified);
+            }
         }
     }
 
@@ -210,7 +238,7 @@ impl std::fmt::Debug for Bot {
             .field("ua", &self.ua)
             .field("vendor", &self.vendor)
             .field("urls", &self.urls)
-            .field("prefixes", &self.prefixes.read().len())
+            .field("prefixes", &self.prefix_count())
             .field("rdns", &self.rdns)
             .finish()
     }

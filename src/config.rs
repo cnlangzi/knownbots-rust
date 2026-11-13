@@ -22,6 +22,14 @@ pub struct ValidatorOptions {
     pub fail_limit: usize,
     /// How often the published lists are refreshed.
     pub refresh_interval: Duration,
+    /// Whether the background work refreshes the lists as soon as it starts.
+    ///
+    /// The worker refreshes the lists right away, so that the crawlers that are
+    /// backed by a document are usable within seconds of the start of the
+    /// process. A host that refreshes the lists itself — and that wants to see
+    /// the outcome before it serves traffic — turns this off; the worker then
+    /// keeps them fresh from the first interval on.
+    pub refresh_on_start: bool,
     /// The client the published lists are downloaded with.
     ///
     /// The crate builds a client of its own when the host supplies none. A host
@@ -39,6 +47,7 @@ impl Default for ValidatorOptions {
             root: PathBuf::from(DEFAULT_ROOT),
             fail_limit: DEFAULT_FAIL_LIMIT,
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
+            refresh_on_start: true,
             #[cfg(feature = "full")]
             http_client: None,
         }
@@ -50,6 +59,7 @@ pub(crate) struct Config {
     pub(crate) root: PathBuf,
     pub(crate) fail_limit: usize,
     pub(crate) refresh_interval: Duration,
+    pub(crate) refresh_on_start: bool,
     #[cfg(feature = "full")]
     pub(crate) http_client: Option<crate::HttpClient>,
 }
@@ -60,6 +70,7 @@ impl From<ValidatorOptions> for Config {
             root: options.root,
             fail_limit: options.fail_limit,
             refresh_interval: options.refresh_interval,
+            refresh_on_start: options.refresh_on_start,
             #[cfg(feature = "full")]
             http_client: options.http_client,
         }

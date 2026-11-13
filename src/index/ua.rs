@@ -97,6 +97,7 @@ mod tests {
             prefixes: RwLock::new(Vec::new()),
             rdns_cache: None,
             fail_cache: None,
+            loaded_at: RwLock::new(None),
         }
     }
 

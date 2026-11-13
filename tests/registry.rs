@@ -6,6 +6,9 @@ use std::path::{Path, PathBuf};
 
 use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
 
+#[cfg(feature = "full")]
+use knownbots::{Validator, ValidatorOptions};
+
 /// Every file of the `conf.d/` directory of the crate.
 fn definition_files() -> Vec<String> {
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("conf.d");
@@ -193,4 +196,26 @@ fn the_api_carries_no_category_label() {
             );
         }
     }
+}
+
+/// The background work runs on a thread of the crate, so the host needs no
+/// runtime for it — and the thread stops when the validator is dropped.
+#[cfg(feature = "full")]
+#[test]
+fn the_background_work_needs_no_runtime_of_the_host() {
+    let directory = tempfile::tempdir().expect("a temporary directory");
+    let validator = Validator::new(ValidatorOptions {
+        root: directory.path().to_path_buf(),
+        // The worker does not touch the network in this test.
+        refresh_on_start: false,
+        ..ValidatorOptions::default()
+    })
+    .expect("a validator");
+
+    assert!(validator.start_background(), "the worker must start");
+    // The second call does nothing.
+    assert!(!validator.start_background());
+
+    validator.shutdown();
+    drop(validator);
 }

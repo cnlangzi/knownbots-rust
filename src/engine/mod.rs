@@ -30,7 +30,10 @@ use std::collections::HashSet;
 use std::sync::atomic::AtomicU64;
 
 #[cfg(feature = "full")]
-use tokio::sync::mpsc;
+use std::thread::JoinHandle;
+
+#[cfg(feature = "full")]
+use tokio::sync::{mpsc, watch};
 
 #[cfg(feature = "full")]
 use crate::feed;
@@ -62,6 +65,8 @@ pub struct Validator {
     pub(crate) config_errors: Vec<BotConfigError>,
     /// The interval between two refreshes of the published lists.
     pub(crate) refresh_interval: Duration,
+    /// Whether the worker refreshes the lists as soon as it starts.
+    pub(crate) refresh_on_start: bool,
     #[cfg(feature = "full")]
     pub(crate) rdns_tx: mpsc::Sender<RdnsJob>,
     #[cfg(feature = "full")]
@@ -76,6 +81,15 @@ pub struct Validator {
     pub(crate) in_flight: Mutex<HashSet<(String, IpAddr)>>,
     #[cfg(feature = "full")]
     pub(crate) http: reqwest::Client,
+    /// Tells the worker thread to stop.
+    #[cfg(feature = "full")]
+    pub(crate) shutdown_tx: watch::Sender<bool>,
+    /// The end of the worker thread.
+    #[cfg(feature = "full")]
+    pub(crate) shutdown_rx: watch::Receiver<bool>,
+    /// The thread the background work runs on.
+    #[cfg(feature = "full")]
+    pub(crate) worker_thread: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl Validator {
@@ -83,7 +97,7 @@ impl Validator {
     /// and hydrates the caches from disk.
     ///
     /// The method does **not** start the background work — call
-    /// [`Validator::start_background`] once a runtime exists.
+    /// [`Validator::start_background`] for that.
     pub fn new(options: ValidatorOptions) -> Result<Arc<Self>, ConfigError> {
         let config = Config::from(options);
         std::fs::create_dir_all(&config.root)
@@ -116,6 +130,8 @@ impl Validator {
             Some(client) => client,
             None => crate::http::build_client()?,
         };
+        #[cfg(feature = "full")]
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
         Ok(Arc::new(Self {
             root: config.root,
@@ -126,6 +142,7 @@ impl Validator {
             refresh_errors: Mutex::new(HashMap::new()),
             config_errors,
             refresh_interval: config.refresh_interval,
+            refresh_on_start: config.refresh_on_start,
             #[cfg(feature = "full")]
             rdns_tx,
             #[cfg(feature = "full")]
@@ -136,11 +153,17 @@ impl Validator {
             in_flight: Mutex::new(HashSet::new()),
             #[cfg(feature = "full")]
             http,
+            #[cfg(feature = "full")]
+            shutdown_tx,
+            #[cfg(feature = "full")]
+            shutdown_rx,
+            #[cfg(feature = "full")]
+            worker_thread: Mutex::new(None),
         }))
     }
 
     /// Builds a validator with the default options and the given directory.
-    pub fn new_sync_only(root: impl Into<PathBuf>) -> Result<Arc<Self>, ConfigError> {
+    pub fn with_root(root: impl Into<PathBuf>) -> Result<Arc<Self>, ConfigError> {
         Self::new(ValidatorOptions {
             root: root.into(),
             ..ValidatorOptions::default()
@@ -150,23 +173,20 @@ impl Validator {
     /// Starts the background work: the reverse lookups and the refresh of the
     /// published lists.
     ///
+    /// The work runs on a thread of the crate that has a runtime of its own, so
+    /// the host needs no runtime for it and its own runtime never carries the
+    /// work of the crate.
+    ///
     /// The scheduler runs an **immediate** refresh, so that the bots that are
     /// backed by a document are usable within seconds of the start of the
     /// process. A failed refresh is retried with an exponential backoff instead
     /// of waiting a whole day.
     ///
-    /// The method needs a runtime to run the work on: without one it answers
-    /// `false` and the work never starts. It is idempotent — the second call
-    /// answers `false` as well.
+    /// The method is idempotent — the second call answers `false` — and it
+    /// answers `false` when the thread could not be started.
     #[cfg(feature = "full")]
     #[must_use = "the background work only runs when the call is made"]
     pub fn start_background(self: &Arc<Self>) -> bool {
-        if tokio::runtime::Handle::try_current().is_err() {
-            tracing::error!(
-                "knownbots: the background work needs a runtime; call it from within one"
-            );
-            return false;
-        }
         if self
             .workers_started
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -177,9 +197,24 @@ impl Validator {
         let Some(receiver) = self.rdns_rx.lock().take() else {
             return false;
         };
-        crate::worker::spawn_rdns_workers(Arc::clone(self), receiver);
-        crate::worker::spawn_scheduler(Arc::clone(self));
-        true
+        let validator = Arc::downgrade(self);
+        let shutdown = self.shutdown_rx.clone();
+        match std::thread::Builder::new()
+            .name("knownbots-worker".to_string())
+            .spawn(move || crate::worker::run(validator, receiver, shutdown))
+        {
+            Ok(thread) => {
+                *self.worker_thread.lock() = Some(thread);
+                true
+            }
+            Err(error) => {
+                tracing::error!(
+                    %error,
+                    "knownbots: the worker thread could not be started"
+                );
+                false
+            }
+        }
     }
 
     /// Verifies the claim of a request.
@@ -474,6 +509,7 @@ impl Validator {
                     prefixes,
                     state,
                     error,
+                    loaded_at: bot.loaded_at(),
                 }
             })
             .collect()
@@ -534,9 +570,16 @@ impl Validator {
         self.refresh_interval
     }
 
+    /// Whether the worker refreshes the lists as soon as it starts.
+    pub fn refreshes_on_start(&self) -> bool {
+        self.refresh_on_start
+    }
+
     /// Stops the background work.
     pub fn shutdown(&self) {
         self.shutdown.store(true, Ordering::Relaxed);
+        #[cfg(feature = "full")]
+        let _ = self.shutdown_tx.send(true);
     }
 
     /// The bot of the registry with that id.
@@ -545,6 +588,18 @@ impl Validator {
             .iter()
             .find(|bot| bot.name == bot_name)
             .ok_or_else(|| ConfigError::Registry(format!("unknown bot {bot_name}")))
+    }
+}
+
+/// The validator stops its worker thread when it is dropped.
+///
+/// The thread holds the validator weakly, so it never keeps the validator
+/// alive: the thread is told to stop and finishes the work that is in flight.
+impl Drop for Validator {
+    fn drop(&mut self) {
+        self.shutdown.store(true, Ordering::Relaxed);
+        #[cfg(feature = "full")]
+        let _ = self.shutdown_tx.send(true);
     }
 }
 
@@ -560,7 +615,7 @@ mod tests {
     #[test]
     fn verified_on_seeded_cidr() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         validator
             .seed_prefix("googlebot", "66.249.64.0/19")
             .unwrap();
@@ -574,7 +629,7 @@ mod tests {
     #[test]
     fn forged_ip_fails_closed() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         validator
             .seed_prefix("googlebot", "66.249.64.0/19")
             .unwrap();
@@ -587,7 +642,7 @@ mod tests {
     #[test]
     fn unknown_ua() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         let ip = IpAddr::V4(Ipv4Addr::new(66, 249, 66, 1));
         let result = validator.verify("Mozilla/5.0 Chrome/120.0", ip);
         assert_eq!(result.status, VerifyStatus::Unknown);
@@ -596,7 +651,7 @@ mod tests {
     #[test]
     fn wrong_case_ua_is_unknown() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         validator
             .seed_prefix("googlebot", "66.249.64.0/19")
             .unwrap();
@@ -608,7 +663,7 @@ mod tests {
     #[test]
     fn rdns_cache_hit_verifies() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         let ip = IpAddr::V4(Ipv4Addr::new(220, 181, 108, 94));
         validator
             .seed_rdns("baiduspider", &ip.to_string(), "crawl.baidu.com")
@@ -623,7 +678,7 @@ mod tests {
     #[test]
     fn facebook_custom_cidr() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         let ip = IpAddr::V4(Ipv4Addr::new(31, 13, 24, 10));
         let ua = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
         let result = validator.verify(ua, ip);
@@ -634,7 +689,7 @@ mod tests {
     #[test]
     fn covered_ip_is_network_address_of_seeded_prefix() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         validator
             .seed_prefix("googlebot", "66.249.64.0/27")
             .unwrap();
@@ -651,7 +706,7 @@ mod tests {
         // closed. Production relies on the immediate refresh of the scheduler to
         // fill this gap.
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         let ip = IpAddr::V4(Ipv4Addr::new(66, 249, 66, 1));
         let result = validator.verify(google_ua(), ip);
         assert_eq!(result.status, VerifyStatus::Failed);
@@ -667,7 +722,7 @@ mod tests {
     #[test]
     fn refresh_status_reports_ready_cold_and_failed() {
         let directory = tempfile::tempdir().unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
 
         let status = |name: &str| {
             validator
@@ -719,7 +774,7 @@ mod tests {
             "name: custombot\nua: \"CustomBot\"\nvendor: \"Example\"\ncustom:\n  - \"31.13.24.0/24\"\n",
         )
         .unwrap();
-        let validator = Validator::new_sync_only(directory.path()).unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
         let status = validator
             .refresh_status()
             .into_iter()
@@ -745,7 +800,7 @@ mod tests {
         )
         .unwrap();
 
-        let validator = Validator::new_sync_only(directory.path())
+        let validator = Validator::with_root(directory.path())
             .expect("a malformed override file must not stop the startup");
         assert!(!validator.bots().iter().any(|bot| bot.name == "brokenbot"));
         assert!(validator.bots().iter().any(|bot| bot.name == "goodbot"));

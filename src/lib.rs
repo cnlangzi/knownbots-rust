@@ -52,6 +52,15 @@
 //! );
 //! assert_eq!(result.status, VerifyStatus::Failed);
 //! ```
+//!
+//! The lists of the crawlers and the reverse lookups run on a thread of the
+//! crate that has a runtime of its own, so the host needs no runtime for them:
+//!
+//! ```no_run
+//! # use knownbots::{Validator, ValidatorOptions};
+//! # let validator = Validator::new(ValidatorOptions::default()).unwrap();
+//! validator.start_background();
+//! ```
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]

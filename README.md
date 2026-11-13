@@ -88,15 +88,17 @@ match result.status {
 }
 ```
 
-The background work — the download of the lists and the reverse lookups — starts
-separately, and it needs a runtime to run on:
+The background work — the download of the lists and the reverse lookups —
+starts separately:
 
 ```rust
 validator.start_background();
 ```
 
-The method answers `false` when there is no runtime and when it was called
-before; it never panics.
+The work runs on a thread of the crate that has a runtime of its own, so the
+host needs no runtime for it and its own runtime never carries the work of the
+crate. The method answers `false` when the thread could not be started and when
+it was called before; it never panics.
 
 A host that reaches the vendors through a proxy, or that trusts a root store of
 its own, hands the crate a client of its own:
@@ -180,12 +182,26 @@ had, so it keeps verifying from the cache.
 
 ## The background work
 
-The scheduler refreshes the lists of the crawlers that are backed by a document.
-The first pass runs immediately, so that the crawlers are usable within seconds
-of the start of the process. A failed refresh is retried with an exponential
-backoff.
+The worker of the crate refreshes the lists of the crawlers that are backed by a
+document. The first pass runs immediately, so that the crawlers are usable
+within seconds of the start of the process. A failed refresh is retried with an
+exponential backoff.
 
-The reverse lookups run on the runtime of the host, never on the request path.
+A host that refreshes the lists itself — and that wants to see the outcome
+before it serves traffic — turns the first pass off:
+
+```rust
+let validator = Validator::new(ValidatorOptions {
+    root: "/var/lib/knownbots".into(),
+    refresh_on_start: false,
+    ..ValidatorOptions::default()
+})?;
+
+validator.refresh().await;   // the first refresh, with its outcome
+validator.start_background(); // the worker keeps them fresh
+```
+
+The reverse lookups run on the worker of the crate, never on the request path.
 The answers are cached on disk, so that a restart does not pay for them again.
 
 ## Observability
@@ -203,7 +219,7 @@ for status in validator.refresh_status() {
 
 | call | answers |
 |---|---|
-| `Validator::refresh_status()` | The state of the address space of every crawler. |
+| `Validator::refresh_status()` | The state of the address space of every crawler, with the instant it was loaded. |
 | `Validator::last_refresh_error(name)` | Why the last refresh of a crawler failed. |
 | `Validator::config_errors()` | The definitions of the host that were skipped. |
 | `Validator::rdns_overflow()` | The reverse lookups that were dropped because the queue was full. |
@@ -215,6 +231,7 @@ for status in validator.refresh_status() {
 | `root` | `./knownbots` | The directory that holds the caches and the definitions of the host. |
 | `fail_limit` | `1000` | How many failed reverse lookups a crawler remembers. |
 | `refresh_interval` | `24h` | How often the published lists are refreshed. |
+| `refresh_on_start` | `true` | Whether the worker refreshes the lists as soon as it starts. |
 | `http_client` | none | The client the lists are downloaded with. The crate builds one when the host supplies none. |
 
 Build the options with `..ValidatorOptions::default()`, so that an option the

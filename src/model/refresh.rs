@@ -1,5 +1,7 @@
 //! The health of the address space of a bot.
 
+use std::time::SystemTime;
+
 use crate::error::RefreshFailure;
 use crate::model::bot::BotKind;
 
@@ -34,4 +36,7 @@ pub struct BotRefreshStatus {
     /// The failure of the last refresh, when the state is
     /// [`BotRefreshState::Failed`].
     pub error: Option<RefreshFailure>,
+    /// When the address space was loaded, so that a host can tell how old it
+    /// is.
+    pub loaded_at: Option<SystemTime>,
 }

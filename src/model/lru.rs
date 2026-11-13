@@ -27,6 +27,7 @@ impl FailLru {
     }
 
     /// Remembers the address.
+    #[cfg(feature = "full")]
     pub fn insert(&self, ip: &str) {
         self.inner.lock().put(ip.to_string(), ());
     }
