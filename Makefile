@@ -5,9 +5,11 @@ PRERELEASE_FLAG := $(if $(findstring -,$(VERSION)),--prerelease,)
 
 build:
 	cargo build --all-features
+	cargo build --no-default-features
 
 test:
 	cargo test --all-features
+	cargo test --no-default-features
 
 fmt:
 	cargo fmt --all

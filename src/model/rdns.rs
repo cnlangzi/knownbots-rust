@@ -187,6 +187,7 @@ mod tests {
         assert!(match_domain("GOOGLEBOT.COM", &["googlebot.com".into()]));
     }
 
+    #[cfg(feature = "full")]
     #[test]
     fn persist_if_dirty_skips_clean() {
         let directory = tempfile::tempdir().unwrap();
@@ -204,6 +205,7 @@ mod tests {
         assert!(!path.exists());
     }
 
+    #[cfg(feature = "full")]
     #[test]
     fn persist_failure_keeps_dirty_for_retry() {
         let directory = tempfile::tempdir().unwrap();

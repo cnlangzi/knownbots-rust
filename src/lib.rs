@@ -57,9 +57,13 @@
 //! crate that has a runtime of its own, so the host needs no runtime for them:
 //!
 //! ```no_run
-//! # use knownbots::{Validator, ValidatorOptions};
-//! # let validator = Validator::new(ValidatorOptions::default()).unwrap();
+//! # #[cfg(feature = "full")]
+//! # {
+//! use knownbots::{Validator, ValidatorOptions};
+//!
+//! let validator = Validator::new(ValidatorOptions::default()).unwrap();
 //! validator.start_background();
+//! # }
 //! ```
 
 #![forbid(unsafe_code)]
