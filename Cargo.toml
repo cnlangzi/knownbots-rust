@@ -1,0 +1,69 @@
+[package]
+name = "knownbots"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "Verify known crawlers via User-Agent and published IP ranges"
+repository = "https://github.com/cnlangzi/knownbots-rust"
+documentation = "https://docs.rs/knownbots"
+readme = "README.md"
+keywords = ["security", "crawler", "bot", "user-agent", "ip"]
+categories = ["security"]
+# The published crate holds the sources, the definitions it embeds and the
+# license. The tests, the workflows and the scripts of the repository are not
+# part of it.
+include = [
+    "src/**",
+    "conf.d/**",
+    "README.md",
+    "LICENSE",
+]
+
+[package.metadata.docs.rs]
+features = ["full"]
+
+[features]
+default = []
+# The network parts of the crate: the download of the published lists and the
+# reverse DNS lookups. The registry and the User-Agent matching work without it.
+full = ["dep:dns-lookup", "dep:reqwest", "dep:tokio"]
+
+[dependencies]
+dns-lookup = { version = "2", optional = true }
+ipnet = "2"
+lru = "0.12"
+parking_lot = "0.12"
+reqwest = { version = "0.12", default-features = false, optional = true, features = [
+    "rustls-tls",
+    "gzip",
+    "brotli",
+    "zstd",
+    "deflate",
+    "json",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror = "2"
+tokio = { version = "1", default-features = false, optional = true, features = [
+    "macros",
+    "net",
+    "rt",
+    "sync",
+    "time",
+] }
+tracing = "0.1"
+
+[dev-dependencies]
+flate2 = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+wiremock = "0.6"
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
