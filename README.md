@@ -224,6 +224,56 @@ for status in validator.refresh_status() {
 | `Validator::config_errors()` | The definitions of the host that were skipped. |
 | `Validator::rdns_overflow()` | The reverse lookups that were dropped because the queue was full. |
 
+## The health of the sources
+
+Every crawler of the registry depends on an outside source: a published list of
+addresses, or the DNS of the vendor. A check reads every source of the registry
+and writes the outcome of the run to a report.
+
+| | |
+|---|---|
+| the run | daily at 04:23 UTC, `.github/workflows/provider-health.yml` |
+| the report | `target/provider-health/report.json` |
+| the issue | labelled `provider-health` |
+
+The check is an ignored test of the crate, so it never runs in the ordinary
+suite. Run it by hand with:
+
+```sh
+cargo test --all-features --test provider_health -- --ignored
+```
+
+The report holds one row per crawler of the registry:
+
+```json
+{
+  "checked_at": 1763012345,
+  "sources": [
+    {
+      "name": "googlebot",
+      "vendor": "Google",
+      "kind": "SearchEngine",
+      "source": "list",
+      "state": "healthy",
+      "fault": null,
+      "prefixes": 1307,
+      "detail": null
+    }
+  ]
+}
+```
+
+| field | meaning |
+|---|---|
+| `source` | `list` (a published address space), `dns` (the reverse DNS of the vendor) or `static` (the crawler states its own prefixes). |
+| `state` | `healthy`, `failed`, `skipped` (no upstream to check) or `pending` (the check did not reach the source). |
+| `fault` | `environment` (the upstream or the network is at fault) or `crate` (the list arrived in a shape the crate mis-reads) — the two failures of the crate. |
+| `prefixes` | The number of prefixes the crawler holds after the check. |
+| `detail` | The reason of the outcome. |
+
+While a source is unhealthy, an issue labelled `provider-health` is open and
+holds the table of the run. It is closed when every source is healthy again.
+
 ## Configuration
 
 | option | default | meaning |

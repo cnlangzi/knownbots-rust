@@ -1,0 +1,25 @@
+name: Provider health
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check every source of the registry
+        timeout-minutes: 20
+        run: cargo test --all-features --test provider_health -- --ignored
+      - name: Render the report and manage the issue
+        if: always()
+        run: scripts/provider-health.sh target/provider-health/report.json
