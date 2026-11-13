@@ -1,0 +1,203 @@
+# The User-Agent every vendor publishes for a crawler of the registry, and the
+# page of the vendor that publishes it.
+#
+# The marker of a definition has to be a word of every User-Agent listed here,
+# and every User-Agent listed here has to be attributed to the crawler that
+# publishes it. `tests/markers.rs` holds the registry to that table.
+#
+# A vendor that publishes only the token of its crawler — the name it writes
+# in `robots.txt`, or the identifier it names the crawler by — publishes that
+# token as its User-Agent, and the token is what the table lists.
+#
+# A vendor that no longer publishes the User-Agent of its crawler keeps its
+# entry: the page that published it is cited, and the crawler is reported.
+#
+# The table is a snapshot of the documentation of the vendors: it reaches no
+# network. A vendor that renames its token is noticed by the provider-health
+# workflow, not by the guard.
+adsbot:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
+  ua:
+    - "AdsBot-Google (+http://www.google.com/adsbot.html)"
+adsbot-mobile:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
+  ua:
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)"
+ahrefsbot:
+  url: "https://ahrefs.com/robot/"
+  ua:
+    - "Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)"
+amazonbot:
+  url: "https://developer.amazon.com/amazonbot/"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amazonbot/0.1) Chrome/W.X.Y.Z Safari/537.36"
+apis-google:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
+  ua:
+    - "APIs-Google (+https://developers.google.com/webmasters/APIs-Google.html)"
+applebot:
+  url: "https://support.apple.com/en-us/119829"
+  ua:
+    - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)"
+    - "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1 (Applebot/0.1; +http://www.apple.com/go/applebot)"
+baiduspider:
+  url: "https://help.baidu.com/question?prod_id=99&class=0&id=3001"
+  ua:
+    - "Baiduspider"
+bingbot:
+  url: "https://www.bing.com/webmasters/help/how-to-verify-bingbot-3905dc26"
+  ua:
+    - "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)"
+bytespider:
+  url: "https://crawler.bytedance.com/"
+  ua:
+    - "Bytespider"
+ccbot:
+  url: "https://commoncrawl.org/faq"
+  ua:
+    - "CCBot/2.0 (https://commoncrawl.org/faq/)"
+    - "CCBot/1.0 (+https://commoncrawl.org/bot.html)"
+chatgpt-user:
+  url: "https://developers.openai.com/api/docs/bots"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot"
+claudebot:
+  url: "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+  ua:
+    - "ClaudeBot"
+cloudflare-healthchecks:
+  url: "https://developers.cloudflare.com/health-checks/how-to/zone-lockdown/"
+  ua:
+    - "Mozilla/5.0 (compatible;Cloudflare-Healthchecks/1.0;+https://www.cloudflare.com/; healthcheck-id: XXX)"
+discordbot:
+  url: "https://support.discord.com/hc/en-us/articles/42500550752919-About-Discord-Link-Previews-and-the-Discordbot"
+  ua:
+    - "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
+duckduckbot:
+  url: "https://duckduckgo.com/duckduckbot.html"
+  ua:
+    - "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)"
+facebookexternalhit:
+  url: "https://developers.facebook.com/docs/sharing/webmasters/crawler/"
+  ua:
+    - "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
+    - "facebookexternalhit/1.1"
+feedfetcher:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "FeedFetcher-Google; (+http://www.google.com/feedfetcher.html)"
+google-inspectiontool:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+  ua:
+    - "Mozilla/5.0 (compatible; Google-InspectionTool/1.0)"
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; Google-InspectionTool/1.0)"
+google-storebot:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+  ua:
+    - "Mozilla/5.0 (X11; Linux x86_64; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Safari/537.36"
+    - "Mozilla/5.0 (Linux; Android 8.0; Pixel 2 Build/OPD3.170816.012; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36"
+googlebot:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+  ua:
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/*W.X.Y.Z* Safari/537.36"
+    - "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+    - "Googlebot/2.1 (+http://www.google.com/bot.html)"
+googleother:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+  ua:
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; GoogleOther)"
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GoogleOther) Chrome/*W.X.Y.Z* Safari/537.36"
+gptbot:
+  url: "https://developers.openai.com/api/docs/bots"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.4; +https://openai.com/gptbot"
+linkedinbot:
+  url: "https://www.linkedin.com/robots.txt"
+  ua:
+    - "LinkedInBot"
+mediapartners-google:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
+  ua:
+    - "Mediapartners-Google"
+    - "(Various mobile device types) (compatible; Mediapartners-Google/2.1; +http://www.google.com/bot.html)"
+meta-externalagent:
+  url: "https://developers.facebook.com/docs/sharing/webmasters/crawler/"
+  ua:
+    - "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)"
+    - "meta-externalagent/1.1"
+mj12bot:
+  url: "https://mj12bot.com/"
+  ua:
+    - "MJ12bot"
+oai-searchbot:
+  url: "https://developers.openai.com/api/docs/bots"
+  ua:
+    - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36; compatible; OAI-SearchBot/1.4; +https://openai.com/searchbot"
+perplexity-user:
+  url: "https://docs.perplexity.ai/docs/resources/perplexity-crawlers"
+  ua:
+    - "Mozilla/5.0 (compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)"
+perplexitybot:
+  url: "https://docs.perplexity.ai/docs/resources/perplexity-crawlers"
+  ua:
+    - "Mozilla/5.0 (compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)"
+petalbot:
+  url: "https://webmaster.petalsearch.com/site/petalbot"
+  ua:
+    - "Mozilla/5.0 (compatible;PetalBot;+https://webmaster.petalsearch.com/site/petalbot)"
+    - "Mozilla/5.0 (Linux; Android 7.0;) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; PetalBot;+https://webmaster.petalsearch.com/site/petalbot)"
+pingdom:
+  url: "https://www.pingdom.com/resources/webhooks/"
+  ua:
+    - "Pingdom.com_bot"
+pinterestbot:
+  url: "https://help.pinterest.com/articles/about-pinterest-crawler-0/"
+  ua:
+    - "Mozilla/5.0 (compatible; Pinterestbot/1.0; +https://www.pinterest.com/bot.html)"
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Pinterestbot/1.0; +https://www.pinterest.com/bot.html)"
+redditbot:
+  url: "https://www.redditinc.com/policies/previews-terms"
+  ua:
+    - "Mozilla/5.0 (compatible; redditbot/1.0; +http://www.reddit.com/feedback)"
+semrushbot:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot"
+semrushbot-ba:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-BA"
+slackbot:
+  url: "https://api.slack.com/robots"
+  ua:
+    - "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)"
+    - "Slackbot 1.0 (+https://api.slack.com/robots)"
+sogou:
+  url: "https://help.sogou.com/guide.html?v=1"
+  ua:
+    - "Sogou web spider"
+    - "Sogou inst spider"
+telegrambot:
+  url: "https://core.telegram.org/bots/faq"
+  ua:
+    - "TelegramBot (like TwitterBot)"
+twitterbot:
+  url: "https://developer.x.com/en/docs/x-robots-twitterbot"
+  ua:
+    - "Twitterbot/1.0"
+uptimerobot:
+  url: "https://uptimerobot.com/help/monitor-status-is-wrong/"
+  ua:
+    - "Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"
+whatsapp:
+  url: "https://developers.facebook.com/documentation/business-messaging/whatsapp/link-previews/"
+  ua:
+    - "WhatsApp/2.22.20.72 A"
+    - "WhatsApp/2.22.19.78 I"
+    - "WhatsApp/2.2236.3 N"
+yandexbot:
+  url: "https://yandex.com/support/webmaster/robot-workings/check-yandex-robots.html"
+  ua:
+    - "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
+    - "Mozilla/5.0 (compatible; YandexBot/3.0; MirrorDetector; +http://yandex.com/bots)"

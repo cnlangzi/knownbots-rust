@@ -1,9 +1,9 @@
 # Majestic SEO crawler
-# https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
+# https://mj12bot.com/
 kind: SEO
 name: mj12bot
 vendor: "Majestic"
-ua: "MJ12Bot"
+ua: "MJ12bot"
 rdns: true
 domains:
   - "mj12bot.com"

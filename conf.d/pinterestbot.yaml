@@ -1,9 +1,9 @@
 # Pinterest bot
-# https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
+# https://help.pinterest.com/articles/about-pinterest-crawler-0/
 kind: SocialMedia
 name: pinterestbot
 vendor: "Pinterest"
-ua: "PinterestBot"
+ua: "Pinterestbot"
 rdns: true
 domains:
   - "pinterest.com"

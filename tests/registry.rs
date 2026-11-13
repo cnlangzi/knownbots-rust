@@ -42,7 +42,7 @@ fn the_embedded_definitions_load() {
     assert!(bots.len() >= 40, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
-    assert!(bots.iter().any(|bot| bot.name == "applebot-extended"));
+    assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
 }
 
 #[test]

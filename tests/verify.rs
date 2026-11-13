@@ -83,26 +83,24 @@ fn the_marker_has_to_sit_on_a_word_boundary() {
 fn the_longest_marker_wins() {
     let (_directory, validator) = validator();
     validator
-        .seed_prefix("applebot-extended", "17.241.208.0/24")
+        .seed_prefix("adsbot-mobile", "66.249.64.0/19")
         .unwrap();
     let result = validator.verify(
-        "Mozilla/5.0 (compatible; Applebot-Extended/1.0)",
-        ip("17.241.208.161"),
+        "Mozilla/5.0 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)",
+        ip("66.249.66.1"),
     );
     assert!(result.is_verified());
-    assert_eq!(result.name, "applebot-extended");
+    assert_eq!(result.name, "adsbot-mobile");
 }
 
 /// The shorter marker of the pair must not claim the request either.
 #[test]
 fn the_shorter_marker_does_not_claim_the_request() {
     let (_directory, validator) = validator();
-    validator
-        .seed_prefix("applebot", "17.241.208.0/24")
-        .unwrap();
+    validator.seed_prefix("adsbot", "66.249.64.0/19").unwrap();
     let result = validator.verify(
-        "Mozilla/5.0 (compatible; Applebot-Extended/1.0)",
-        ip("17.241.208.161"),
+        "Mozilla/5.0 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)",
+        ip("66.249.66.1"),
     );
     assert!(!result.is_verified());
     assert_eq!(result.status, VerifyStatus::Failed);
