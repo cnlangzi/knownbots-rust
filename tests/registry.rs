@@ -173,14 +173,22 @@ fn the_api_carries_the_registry_the_validator_and_the_result() {
 /// host that uses it: the wire labels of an admin panel belong to that host.
 #[test]
 fn the_api_carries_no_category_label() {
-    let labels = ["search_engine", "ads_bot", "ai_bot", "social", "monitoring"];
+    // The labels are searched as the string literals they would be written as,
+    // so that a word in a comment does not fail the suite.
+    let labels = [
+        "\"search_engine\"",
+        "\"ads_bot\"",
+        "\"ai_bot\"",
+        "\"social\"",
+        "\"monitoring\"",
+    ];
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     for file in source_files(&source) {
         let text = std::fs::read_to_string(&file).expect("the source must be readable");
         for label in labels {
             assert!(
                 !text.contains(label),
-                "{} holds the label {label:?}, which belongs to the host of the crate",
+                "{} holds the label {label}, which belongs to the host of the crate",
                 file.display()
             );
         }

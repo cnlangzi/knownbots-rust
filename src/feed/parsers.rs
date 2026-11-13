@@ -87,16 +87,16 @@ fn parse_ahrefs(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
 /// preferred; a page that lists the addresses as literals is the fallback.
 fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
     let text = String::from_utf8_lossy(body);
-    if let Some(document) = extract_json_document(&text) {
-        let document: Value = serde_json::from_str(document).map_err(|error| {
-            ParseError::NotADocument(format!("the page holds no readable json document: {error}"))
-        })?;
-        let entries = document
-            .get("prefixes")
-            .and_then(Value::as_array)
-            .ok_or_else(|| {
-                ParseError::UnexpectedShape("the document holds no `prefixes` list".to_string())
-            })?;
+
+    // The page may open more than one object in front of the list, so every
+    // one of them is a candidate.
+    for candidate in json_candidates(&text) {
+        let Ok(document) = serde_json::from_str::<Value>(candidate) else {
+            continue;
+        };
+        let Some(entries) = document.get("prefixes").and_then(Value::as_array) else {
+            continue;
+        };
         let mut prefixes = Vec::new();
         for entry in entries {
             if let Some(value) = entry.get("ipv4Prefix").and_then(Value::as_str) {
@@ -110,6 +110,8 @@ fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
         }
         return Ok(prefixes);
     }
+
+    // The page may list the addresses as literals.
     let mut prefixes = Vec::new();
     let mut start = None;
     for (index, character) in text.char_indices() {
@@ -119,11 +121,11 @@ fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
                 start = Some(index);
             }
         } else if let Some(begin) = start.take() {
-            push_addr_or_cidr(&mut prefixes, &text[begin..index]);
+            push_ipv4_literal(&mut prefixes, &text[begin..index]);
         }
     }
     if let Some(begin) = start {
-        push_addr_or_cidr(&mut prefixes, &text[begin..]);
+        push_ipv4_literal(&mut prefixes, &text[begin..]);
     }
     if prefixes.is_empty() {
         return Err(ParseError::NotADocument(
@@ -136,20 +138,36 @@ fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
     Ok(prefixes)
 }
 
-/// Finds the json document the page of Amazon carries.
-fn extract_json_document(text: &str) -> Option<&str> {
-    // The document looks like `{"creationTime": "...", "prefixes": [...]}`.
-    let start = text.find("\"prefixes\"")?;
-    let object_start = text[..start].rfind('{')?;
+/// The objects of the page that may hold the list.
+///
+/// The list is the value of the key `prefixes`, so the object that holds it
+/// opens in front of the key. The page may open more than one object there —
+/// an inline script, a block of structured data — so every one of them is a
+/// candidate, the nearest first.
+fn json_candidates(text: &str) -> Vec<&str> {
+    let Some(key) = text.find("\"prefixes\"") else {
+        return Vec::new();
+    };
+    let mut candidates = Vec::new();
+    for (index, _) in text[..key].match_indices('{').rev() {
+        if let Some(document) = brace_match(text, index) {
+            candidates.push(document);
+        }
+    }
+    candidates
+}
+
+/// The object that opens at `start` and the text it ends at.
+fn brace_match(text: &str, start: usize) -> Option<&str> {
     let bytes = text.as_bytes();
     let mut depth = 0i32;
-    for (offset, byte) in bytes[object_start..].iter().enumerate() {
+    for (offset, byte) in bytes[start..].iter().enumerate() {
         match byte {
             b'{' => depth += 1,
             b'}' => {
                 depth -= 1;
                 if depth == 0 {
-                    return Some(&text[object_start..object_start + offset + 1]);
+                    return Some(&text[start..start + offset + 1]);
                 }
             }
             _ => {}
@@ -196,6 +214,21 @@ fn push_addr_or_cidr(prefixes: &mut Vec<IpNet>, value: &str) {
             Ipv6Net::new(address, 128).expect("a /128 network"),
         ));
     }
+}
+
+/// Adds the address of a literal, if the literal is an IPv4 address.
+///
+/// The page of a vendor holds other dotted numbers — a version, a date. Only a
+/// full address counts.
+fn push_ipv4_literal(prefixes: &mut Vec<IpNet>, value: &str) {
+    let value = value.trim();
+    if value.split('.').count() != 4 {
+        return;
+    }
+    let Ok(address) = value.parse::<Ipv4Addr>() else {
+        return;
+    };
+    prefixes.push(IpNet::V4(Ipv4Net::new(address, 32).expect("a /32 network")));
 }
 
 #[cfg(test)]
@@ -301,5 +334,22 @@ mod tests {
         let body = b"<html>the addresses are 3.81.245.78 and 3.81.245.78</html>";
         let nets = parse("amazon", body).unwrap();
         assert_eq!(nets.len(), 1);
+    }
+
+    /// The page may open another object in front of the list — an inline
+    /// script, a block of structured data. The list is still found.
+    #[test]
+    fn amazon_parser_reads_the_list_of_a_nested_page() {
+        let body = br#"<html><script>{"meta": {"version": "1.2"}, "prefixes": [{"ipv4Prefix":"3.81.245.0/24"}]}</script></html>"#;
+        let nets = parse("amazon", body).unwrap();
+        assert_eq!(nets.len(), 1);
+    }
+
+    /// A page that holds a version and no list is not the list of the vendor.
+    #[test]
+    fn amazon_parser_ignores_the_numbers_of_the_page() {
+        let body = b"<html>the version is 5.0 and the date is 2026.01.01</html>";
+        let error = parse("amazon", body).unwrap_err();
+        assert!(matches!(error, ParseError::NotADocument(_)));
     }
 }

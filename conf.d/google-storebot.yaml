@@ -11,3 +11,4 @@ urls:
 domains:
   - "google.com"
   - "googlebot.com"
+rdns: false

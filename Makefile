@@ -29,6 +29,7 @@ clean:
 release:
 	@test -n "$(VERSION)" || { echo "VERSION is required, for example: make release VERSION=0.1.1" >&2; exit 1; }
 	@printf '%s' "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$' || { echo "VERSION '$(VERSION)' is not a valid version, expected x.y.z or x.y.z-<suffix>" >&2; exit 1; }
+	@test "$$(git branch --show-current)" = main || { echo "a release is cut from main, not from '$$(git branch --show-current)'" >&2; exit 1; }
 	@test -z "$$(git status --porcelain)" || { echo "the working tree has uncommitted changes" >&2; exit 1; }
 	@if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then echo "the tag v$(VERSION) already exists locally" >&2; exit 1; fi
 	@remote_tags=$$(git ls-remote --tags origin "v$(VERSION)") || { echo "cannot reach origin to look for the tag v$(VERSION)" >&2; exit 1; }; \
@@ -39,8 +40,9 @@ release:
 			200) echo "crates.io already carries knownbots $(VERSION)" >&2; exit 1 ;; \
 			*) echo "cannot tell whether crates.io carries knownbots $(VERSION) (HTTP $$status)" >&2; exit 1 ;; \
 		esac
+	@scripts/set-version.sh "$(VERSION)"
 	@$(MAKE) fmt-check lint test doc
-	@git commit --allow-empty -m "chore(release): $(VERSION)"
+	@git commit --allow-empty -am "chore(release): $(VERSION)"
 	@git tag -a "v$(VERSION)" -m "knownbots $(VERSION)"
 	@git push --atomic origin HEAD:main "v$(VERSION)"
 	@gh release create "v$(VERSION)" --generate-notes --verify-tag $(PRERELEASE_FLAG)

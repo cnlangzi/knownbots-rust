@@ -143,11 +143,22 @@ fn load_file(path: &Path) -> Result<HashMap<String, String>, ConfigError> {
 }
 
 /// Whether the hostname is the domain or a subdomain of it.
+///
+/// The call sits on the request path, so it allocates nothing: the hostname and
+/// the domain are compared byte by byte.
 pub fn match_domain(hostname: &str, domains: &[String]) -> bool {
-    let host = hostname.trim_end_matches('.').to_ascii_lowercase();
+    let host = hostname.trim_end_matches('.').as_bytes();
     for domain in domains {
-        let domain = domain.trim_end_matches('.').to_ascii_lowercase();
-        if host == domain || host.ends_with(&format!(".{domain}")) {
+        let domain = domain.trim_end_matches('.').as_bytes();
+        if host.eq_ignore_ascii_case(domain) {
+            return true;
+        }
+        // The hostname has to end with the domain, and the character in front of
+        // it has to be a dot.
+        if host.len() > domain.len()
+            && host[host.len() - domain.len()..].eq_ignore_ascii_case(domain)
+            && host[host.len() - domain.len() - 1] == b'.'
+        {
             return true;
         }
     }
@@ -168,6 +179,17 @@ mod tests {
             "evil-googlebot.com",
             &["googlebot.com".into()]
         ));
+        // The suffix has to sit on a dot.
+        assert!(!match_domain("notgooglebot.com", &["googlebot.com".into()]));
+    }
+
+    #[test]
+    fn match_domain_ignores_the_case() {
+        assert!(match_domain(
+            "crawl.googlebot.com",
+            &["GoogleBot.com".into()]
+        ));
+        assert!(match_domain("GOOGLEBOT.COM", &["googlebot.com".into()]));
     }
 
     #[test]

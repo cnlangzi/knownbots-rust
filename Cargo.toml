@@ -10,6 +10,15 @@ documentation = "https://docs.rs/knownbots"
 readme = "README.md"
 keywords = ["security", "crawler", "bot", "user-agent", "ip"]
 categories = ["security"]
+# The published crate holds the sources, the definitions it embeds and the
+# license. The tests, the workflows and the scripts of the repository are not
+# part of it.
+include = [
+    "src/**",
+    "conf.d/**",
+    "README.md",
+    "LICENSE",
+]
 
 [package.metadata.docs.rs]
 features = ["full"]

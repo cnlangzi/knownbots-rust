@@ -440,11 +440,12 @@ impl Validator {
     /// `Failed`; a bot that is backed by a document and holds no prefix means
     /// `Cold`; everything else is `Ready`.
     pub fn refresh_status(&self) -> Vec<BotRefreshStatus> {
+        let errors = self.refresh_errors.lock();
         self.bots
             .iter()
             .map(|bot| {
                 let prefixes = bot.prefixes.read().len();
-                let error = self.refresh_errors.lock().get(&bot.name).cloned();
+                let error = errors.get(&bot.name).cloned();
                 let state = if error.is_some() {
                     BotRefreshState::Failed
                 } else if !bot.urls.is_empty() && prefixes == 0 {

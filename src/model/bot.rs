@@ -141,6 +141,10 @@ impl Bot {
     }
 
     /// Replaces the downloaded prefixes while keeping the ones of the definition.
+    ///
+    /// The merged set holds every prefix once. The cache of a previous run
+    /// holds the prefixes of the definition as well, so the merge has to drop
+    /// the duplicates — otherwise the set grows with every restart.
     pub fn store_downloaded(&self, downloaded: Vec<IpNet>) {
         if downloaded.is_empty() {
             // A refresh that yields nothing never wipes a working set.
@@ -148,6 +152,8 @@ impl Bot {
         }
         let mut merged = self.custom.clone();
         merged.extend(downloaded);
+        merged.sort();
+        merged.dedup();
         *self.prefixes.write() = merged;
     }
 
@@ -246,4 +252,43 @@ pub struct BotConfigError {
     pub path: String,
     /// Why the file was skipped.
     pub message: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bot_with_custom() -> Bot {
+        Bot::from_definition(BotDefinition {
+            name: "testbot".into(),
+            kind: BotKind::SearchEngine,
+            parser: "google".into(),
+            ua: "TestBot".into(),
+            vendor: "Example".into(),
+            urls: vec!["https://example.invalid/ips.json".into()],
+            custom: vec!["10.0.0.0/8".into()],
+            domains: Vec::new(),
+            rdns: false,
+        })
+    }
+
+    /// The prefixes of the definition are added once, however often the cache of
+    /// a previous run is read back. The cache holds the prefixes of the
+    /// definition as well, so the merge has to drop the duplicates.
+    #[test]
+    fn the_prefixes_of_the_definition_are_added_once() {
+        let bot = bot_with_custom();
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("ips.txt");
+
+        bot.store_downloaded(vec!["1.2.3.0/24".parse().unwrap()]);
+        bot.persist_ips(&path).unwrap();
+
+        for _ in 0..3 {
+            bot.load_cached_ips(&path);
+        }
+
+        let prefixes = bot.prefixes.read();
+        assert_eq!(prefixes.len(), 2, "the prefixes grew: {prefixes:?}");
+    }
 }
