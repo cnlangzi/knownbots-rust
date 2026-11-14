@@ -112,7 +112,7 @@ async fn run_scheduler(validator: Weak<Validator>, mut shutdown: watch::Receiver
         };
         let interval = validator.refresh_interval();
         // The first pass runs immediately — without it, every crawler that is
-        // backed by a document would fail closed until the first refresh
+        // backed by a document alone would fail closed until the first refresh
         // succeeded. A host that refreshes the lists itself turns that off.
         let complete = if first && !validator.refreshes_on_start() {
             first = false;

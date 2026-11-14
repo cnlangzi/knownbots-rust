@@ -70,7 +70,7 @@ pub struct Bot {
     pub custom: Vec<IpNet>,
     /// The domains the reverse DNS of the bot has to end in.
     pub domains: Vec<String>,
-    /// Whether the bot is verified by its reverse DNS.
+    /// Whether the bot carries a reverse DNS of its own.
     pub rdns: bool,
     /// The prefixes of the bot: the ones of its definition and the ones of the
     /// documents it published.
