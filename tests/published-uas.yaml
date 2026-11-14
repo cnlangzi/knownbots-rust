@@ -5,12 +5,17 @@
 # and every User-Agent listed here has to be attributed to the crawler that
 # publishes it. `tests/markers.rs` holds the registry to that table.
 #
-# A vendor that publishes only the token of its crawler — the name it writes
-# in `robots.txt`, or the identifier it names the crawler by — publishes that
-# token as its User-Agent, and the token is what the table lists.
+# A vendor that publishes no User-Agent header but names its crawler — the
+# token it writes in `robots.txt`, the identifier it gives the crawler —
+# publishes that token as the User-Agent of the crawler, and the token is
+# what the table lists. A token the crawler does not send is no User-Agent at
+# all, and the definition of such a crawler is removed, as `google-extended`
+# and `applebot-extended` were.
 #
-# A vendor that no longer publishes the User-Agent of its crawler keeps its
-# entry: the page that published it is cited, and the crawler is reported.
+# The vendors that publish no User-Agent of their crawler at all keep their
+# entry — the page that published it is cited — and are named here because the
+# guard cannot hold them to it: `bytespider`, `redditbot`, `telegrambot` and
+# `twitterbot`.
 #
 # The table is a snapshot of the documentation of the vendors: it reaches no
 # network. A vendor that renames its token is noticed by the provider-health

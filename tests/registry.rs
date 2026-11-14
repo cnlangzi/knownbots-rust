@@ -58,8 +58,16 @@ fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
     assert_eq!(count(Source::List), 20, "the registry holds other lists");
-    assert_eq!(count(Source::Dns), 21, "the registry holds other reverse DNS");
-    assert_eq!(count(Source::Static), 1, "the registry holds other static crawlers");
+    assert_eq!(
+        count(Source::Dns),
+        21,
+        "the registry holds other reverse DNS"
+    );
+    assert_eq!(
+        count(Source::Static),
+        1,
+        "the registry holds other static crawlers"
+    );
 }
 
 #[test]
