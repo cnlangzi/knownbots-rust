@@ -1,0 +1,9 @@
+# Google-Read-Aloud - Fetches a page and reads it aloud with text-to-speech
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-read-aloud
+kind: AIAssist
+name: google-read-aloud
+vendor: "Google"
+parser: google
+ua: "Google-Read-Aloud"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json"

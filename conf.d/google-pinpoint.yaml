@@ -1,0 +1,9 @@
+# Google-Pinpoint - Fetches the sources of a personal collection
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-pinpoint
+kind: AIAssist
+name: google-pinpoint
+vendor: "Google"
+parser: google
+ua: "Google-Pinpoint"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json"

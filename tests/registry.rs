@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 42, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 52, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -57,7 +57,7 @@ fn the_embedded_definitions_load() {
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 20, "the registry holds other lists");
+    assert_eq!(count(Source::List), 30, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         21,
@@ -67,6 +67,49 @@ fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
         count(Source::Static),
         1,
         "the registry holds other static crawlers"
+    );
+}
+
+/// The size of the registry is the size the documentation of the matching
+/// names.
+///
+/// The module documentation of the matching names the size of the table it
+/// scans over. A number that drifts from the registry drifts silently — the
+/// documentation still reads well and nobody learns that it lies — so the
+/// number is taken out of the documentation and held to the registry.
+#[test]
+fn the_size_of_the_registry_is_the_size_the_documentation_names() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/index/ua.rs");
+    let source = std::fs::read_to_string(&path).expect("the module must be readable");
+    let documentation: String = source
+        .lines()
+        .take_while(|line| line.starts_with("//!"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let mut sizes: Vec<usize> = Vec::new();
+    let mut rest = documentation.as_str();
+    while let Some(index) = rest.find('~') {
+        rest = &rest[index + 1..];
+        let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+        if digits.is_empty() || !rest[digits.len()..].trim_start().starts_with("entries") {
+            continue;
+        }
+        sizes.push(digits.parse().expect("a number of entries"));
+    }
+
+    assert_eq!(
+        sizes.len(),
+        1,
+        "the module documentation names the size of the registry once: {sizes:?}"
+    );
+    assert_eq!(
+        sizes[0],
+        bots.len(),
+        "the module documentation names {} entries, the registry holds {}",
+        sizes[0],
+        bots.len()
     );
 }
 

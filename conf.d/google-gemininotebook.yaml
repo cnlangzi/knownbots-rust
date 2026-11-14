@@ -1,0 +1,9 @@
+# Google-GeminiNotebook - Fetches the sources a Gemini Notebook user adds
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#gemini-notebook
+kind: AIAssist
+name: google-gemininotebook
+vendor: "Google"
+parser: google
+ua: "Google-GeminiNotebook"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json"

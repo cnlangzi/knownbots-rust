@@ -1,0 +1,9 @@
+# Google-Agent - An agent on Google infrastructure that browses on a user's request
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-agent
+kind: AIAssist
+name: google-agent
+vendor: "Google"
+parser: google
+ua: "Google-Agent"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-agents.json"

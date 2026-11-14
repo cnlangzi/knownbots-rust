@@ -1,0 +1,9 @@
+# Google-CWS - Fetches the metadata of a Chrome extension or theme
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-cws
+kind: SocialMedia
+name: google-cws
+vendor: "Google"
+parser: google
+ua: "Google-CWS"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json"

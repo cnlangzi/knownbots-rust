@@ -91,11 +91,46 @@ feedfetcher:
   url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
   ua:
     - "FeedFetcher-Google; (+http://www.google.com/feedfetcher.html)"
+google-agent:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko; compatible; Google-Agent; +https://developers.google.com/crawling/docs/crawlers-fetchers/google-agent) Chrome/W.X.Y.Z Safari/537.36"
+    - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/W.X.Y.Z Mobile Safari/537.36 (compatible; Google-Agent; +https://developers.google.com/crawling/docs/crawlers-fetchers/google-agent)"
+google-cloudvertexbot:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+  ua:
+    - "Google-CloudVertexBot"
+google-cws:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Mozilla/5.0 (compatible; Google-CWS)"
+google-gemininotebook:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 (compatible; Google-GeminiNotebook; +https://developers.google.com/crawling/docs/crawlers-fetchers/google-gemininotebook)"
+    - "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36 (compatible; Google-GeminiNotebook; +https://developers.google.com/crawling/docs/crawlers-fetchers/google-gemininotebook)"
 google-inspectiontool:
   url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
   ua:
     - "Mozilla/5.0 (compatible; Google-InspectionTool/1.0)"
     - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; Google-InspectionTool/1.0)"
+google-pinpoint:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Google-Pinpoint"
+google-read-aloud:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 (compatible; Google-Read-Aloud; +https://support.google.com/webmasters/answer/1061943)"
+    - "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36 (compatible; Google-Read-Aloud; +https://support.google.com/webmasters/answer/1061943)"
+google-safety:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
+  ua:
+    - "Google-Safety"
+google-site-verification:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "Mozilla/5.0 (compatible; Google-Site-Verification/1.0)"
 google-storebot:
   url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
   ua:
@@ -108,11 +143,19 @@ googlebot:
     - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/*W.X.Y.Z* Safari/537.36"
     - "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
     - "Googlebot/2.1 (+http://www.google.com/bot.html)"
+googlemessages:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "GoogleMessages"
 googleother:
   url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
   ua:
     - "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/*W.X.Y.Z* Mobile Safari/537.36 (compatible; GoogleOther)"
     - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GoogleOther) Chrome/*W.X.Y.Z* Safari/537.36"
+googleproducer:
+  url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers"
+  ua:
+    - "GoogleProducer; (+https://developers.google.com/search/docs/crawling-indexing/google-producer)"
 gptbot:
   url: "https://developers.openai.com/api/docs/bots"
   ua:
