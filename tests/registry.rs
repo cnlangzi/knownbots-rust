@@ -1,9 +1,12 @@
 //! The registry of the bots: the embedded definitions, the definitions an
 //! operator overrides, and the contract the definitions have to satisfy.
 
+mod common;
+
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use common::Source;
 use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
 
 #[cfg(feature = "full")]
@@ -39,10 +42,32 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert!(bots.len() >= 40, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 42, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
-    assert!(bots.iter().any(|bot| bot.name == "applebot-extended"));
+    assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
+}
+
+/// The counts the documentation of the provider-health check states.
+///
+/// The check reads every source of the registry, so the numbers it names have
+/// to be the numbers the registry holds — the check itself only runs against
+/// the internet.
+#[test]
+fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+    let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
+    assert_eq!(count(Source::List), 20, "the registry holds other lists");
+    assert_eq!(
+        count(Source::Dns),
+        21,
+        "the registry holds other reverse DNS"
+    );
+    assert_eq!(
+        count(Source::Static),
+        1,
+        "the registry holds other static crawlers"
+    );
 }
 
 #[test]

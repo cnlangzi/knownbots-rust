@@ -28,10 +28,6 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "apis-google.yaml",
         include_str!("../../conf.d/apis-google.yaml"),
     ),
-    (
-        "applebot-extended.yaml",
-        include_str!("../../conf.d/applebot-extended.yaml"),
-    ),
     ("applebot.yaml", include_str!("../../conf.d/applebot.yaml")),
     (
         "baiduspider.yaml",
@@ -50,10 +46,6 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "claudebot.yaml",
         include_str!("../../conf.d/claudebot.yaml"),
-    ),
-    (
-        "cloudflare-alwaysonline.yaml",
-        include_str!("../../conf.d/cloudflare-alwaysonline.yaml"),
     ),
     (
         "cloudflare-healthchecks.yaml",
@@ -78,10 +70,6 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "googlebot.yaml",
         include_str!("../../conf.d/googlebot.yaml"),
-    ),
-    (
-        "google-extended.yaml",
-        include_str!("../../conf.d/google-extended.yaml"),
     ),
     (
         "google-inspectiontool.yaml",
@@ -371,7 +359,7 @@ mod tests {
         let bots = load_bots(None).unwrap();
         assert!(bots.iter().any(|bot| bot.name == "googlebot"));
         assert!(bots.iter().any(|bot| bot.name == "claudebot"));
-        assert!(bots.iter().any(|bot| bot.name == "applebot-extended"));
+        assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
         assert!(bots.len() >= 40);
     }
 
@@ -397,11 +385,11 @@ mod tests {
         assert_eq!(bing.ua, "bingbot");
         let google = bots.iter().find(|bot| bot.name == "googlebot").unwrap();
         assert_eq!(google.ua, "Googlebot");
-        let extended = bots
+        let inspection = bots
             .iter()
-            .find(|bot| bot.name == "applebot-extended")
+            .find(|bot| bot.name == "google-inspectiontool")
             .unwrap();
-        assert_eq!(extended.ua, "Applebot-Extended");
+        assert_eq!(inspection.ua, "Google-InspectionTool");
     }
 
     #[test]

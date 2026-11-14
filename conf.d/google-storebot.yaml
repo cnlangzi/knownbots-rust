@@ -4,7 +4,7 @@
 kind: SEO
 name: google-storebot
 vendor: "Google"
-ua: "GoogleStoreBot"
+ua: "Storebot-Google"
 parser: google
 urls:
   - "https://developers.google.com/static/search/apis/ipranges/googlebot.json"

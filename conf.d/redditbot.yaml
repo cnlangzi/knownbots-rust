@@ -1,8 +1,9 @@
 # RedditBot - Reddit link preview / crawler
+# https://www.redditinc.com/policies/previews-terms
 kind: SocialMedia
 name: redditbot
 vendor: "Reddit"
-ua: "Redditbot"
+ua: "redditbot"
 rdns: true
 domains:
   - "reddit.com"

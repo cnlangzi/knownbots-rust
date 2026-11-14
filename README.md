@@ -188,8 +188,8 @@ never holds a lock that a background task holds for long.
    registry. The match is **byte-exact** and sits on a **word boundary**: the
    official markers are published in a fixed casing (`Googlebot`, never
    `googlebot`), and `MyGooglebot` does not match `Googlebot`. When several
-   markers match, the **longest** one wins, so `Applebot-Extended` is preferred
-   over `Applebot`.
+   markers match, the **longest** one wins, so `AdsBot-Google-Mobile` is
+   preferred over `AdsBot`.
 2. The address of the request has to fall into the address space of the matched
    crawler. The address space is the set of prefixes the vendor published, plus
    the prefixes the definition of the crawler states itself.
@@ -262,42 +262,39 @@ is compiled into the crate.
 | amazonbot | Amazon | AITraining | Amazonbot | list |
 | apis-google | Google | Monitor | APIs-Google | list |
 | applebot | Apple | SearchEngine | Applebot | list |
-| applebot-extended | Apple | AITraining | Applebot-Extended | list |
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |
 | bingbot | Microsoft | SearchEngine | bingbot | list |
 | bytespider | ByteDance | AITraining | Bytespider | dns |
 | ccbot | CommonCrawl | AITraining | CCBot | dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | dns |
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
-| cloudflare-alwaysonline | Cloudflare | SearchEngine | CloudFlare-AlwaysOnline | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
 | duckduckbot | DuckDuckGo | SearchEngine | DuckDuckBot | list |
 | facebookexternalhit | Meta | SocialMedia | facebookexternalhit | static |
 | feedfetcher | Google | SearchEngine | FeedFetcher | list |
-| google-extended | Google | AIMixed | Google-Extended | list |
 | google-inspectiontool | Google | SearchEngine | Google-InspectionTool | list |
-| google-storebot | Google | SEO | GoogleStoreBot | list |
+| google-storebot | Google | SEO | Storebot-Google | list |
 | googlebot | Google | SearchEngine | Googlebot | list |
 | googleother | Google | SearchEngine | GoogleOther | list |
 | gptbot | OpenAI | AITraining | GPTBot | list |
 | linkedinbot | LinkedIn | SocialMedia | LinkedInBot | dns |
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
-| meta-externalagent | Meta | AITraining | Meta-ExternalAgent | dns |
-| mj12bot | Majestic | SEO | MJ12Bot | dns |
+| meta-externalagent | Meta | AITraining | meta-externalagent | dns |
+| mj12bot | Majestic | SEO | MJ12bot | dns |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
 | perplexity-user | Perplexity | AIAssist | Perplexity-User | dns |
 | perplexitybot | Perplexity | AITraining | PerplexityBot | dns |
 | petalbot | Huawei | AITraining | PetalBot | dns |
 | pingdom | Pingdom | Monitor | Pingdom | list |
-| pinterestbot | Pinterest | SocialMedia | PinterestBot | dns |
-| redditbot | Reddit | SocialMedia | Redditbot | dns |
+| pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
+| redditbot | Reddit | SocialMedia | redditbot | dns |
 | semrushbot | Semrush | SEO | SemrushBot | dns |
 | semrushbot-ba | Semrush | SEO | SemrushBot-BA | dns |
 | slackbot | Slack | SocialMedia | Slackbot | dns |
 | sogou | Sogou | SearchEngine | Sogou | dns |
 | telegrambot | Telegram | SocialMedia | TelegramBot | dns |
-| twitterbot | Twitter | SocialMedia | twitterbot | dns |
+| twitterbot | Twitter | SocialMedia | Twitterbot | dns |
 | uptimerobot | UptimeRobot | Monitor | UptimeRobot | list |
 | whatsapp | Meta | SocialMedia | WhatsApp | dns |
 | yandexbot | Yandex | SearchEngine | YandexBot | dns |
@@ -427,9 +424,12 @@ fn main() {
     assert!(!contains_word("MyGooglebot/1.0", "Googlebot"));
 
     // The longest marker wins.
-    let position = find_bot_by_ua("Mozilla/5.0 (compatible; Applebot-Extended/1.0)", &bots)
-        .expect("a match");
-    assert_eq!(bots[position].name, "applebot-extended");
+    let position = find_bot_by_ua(
+        "Mozilla/5.0 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)",
+        &bots,
+    )
+    .expect("a match");
+    assert_eq!(bots[position].name, "adsbot-mobile");
 
     // The vendor of a crawler, and the domain of its reverse DNS.
     assert_eq!(vendor_for("bingbot"), "Microsoft");

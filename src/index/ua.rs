@@ -6,9 +6,9 @@
 //!
 //! A match must also sit on a word boundary — alphanumeric on either side
 //! disqualifies (`MyGooglebot` does not match `Googlebot`). A hyphen is a
-//! boundary, so `Applebot-Extended` contains the word `Applebot`. When several
-//! markers match, the **longest** wins so that the more specific bot is
-//! preferred.
+//! boundary, so `AdsBot-Google-Mobile` contains the word `AdsBot`. When
+//! several markers match, the **longest** wins so that the more specific bot
+//! is preferred.
 //!
 //! Matching is a linear scan over the table of the registry (~45 entries). That
 //! beats a per-byte index once the longest match forces a full pass anyway, and
@@ -125,24 +125,24 @@ mod tests {
     #[test]
     fn contains_word_hyphen_is_boundary() {
         assert!(contains_word(
-            "Mozilla/5.0 (compatible; Applebot-Extended/1.0)",
-            "Applebot"
+            "Mozilla/5.0 (compatible; AdsBot-Google-Mobile)",
+            "AdsBot"
         ));
         assert!(contains_word(
-            "Mozilla/5.0 (compatible; Applebot-Extended/1.0)",
-            "Applebot-Extended"
+            "Mozilla/5.0 (compatible; AdsBot-Google-Mobile)",
+            "AdsBot-Google-Mobile"
         ));
     }
 
     #[test]
     fn longest_marker_wins() {
         let bots = vec![
-            bot("applebot", "Applebot"),
-            bot("applebot-extended", "Applebot-Extended"),
+            bot("adsbot", "AdsBot"),
+            bot("adsbot-mobile", "AdsBot-Google-Mobile"),
         ];
-        let ua = "Mozilla/5.0 (compatible; Applebot-Extended/1.0)";
+        let ua = "Mozilla/5.0 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)";
         let position = find_bot_by_ua(ua, &bots).expect("a match");
-        assert_eq!(bots[position].name, "applebot-extended");
+        assert_eq!(bots[position].name, "adsbot-mobile");
     }
 
     #[test]
