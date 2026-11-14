@@ -1,6 +1,6 @@
 # CCBot - Common Crawl
 # https://commoncrawl.org/faq
-# IP list: https://index.commoncrawl.org/ccbot.json (Google-style ipv4Prefix fields)
+# IP list uses Google-style ipv4Prefix fields.
 kind: AITraining
 name: ccbot
 vendor: "CommonCrawl"

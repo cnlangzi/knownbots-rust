@@ -125,7 +125,8 @@ struct Row {
     state: State,
     /// Who is at fault, when the source is broken.
     fault: Option<Fault>,
-    /// The number of prefixes the entry holds.
+    /// The number of prefixes the entry holds — the same number on every row
+    /// of the entry.
     prefixes: usize,
     /// The reason of the outcome.
     detail: Option<String>,
@@ -163,8 +164,8 @@ struct Report {
 /// The two tests of a binary run in parallel, so the report is written behind
 /// a lock.
 struct Shared {
-    /// One row per source of an entry of the registry.
-    rows: BTreeMap<(String, Source), Row>,
+    /// The rows of every entry of the registry, one per source of the entry.
+    rows: BTreeMap<String, BTreeMap<Source, Row>>,
     /// The path of the report.
     path: PathBuf,
     /// The Unix time of the start of the run.
@@ -179,7 +180,11 @@ impl Shared {
     fn write(&self) {
         let report = Report {
             checked_at: self.checked_at,
-            sources: self.rows.values().cloned().collect(),
+            sources: self
+                .rows
+                .values()
+                .flat_map(|rows| rows.values().cloned())
+                .collect(),
         };
         let body = serde_json::to_string_pretty(&report).expect("the report must be serialisable");
         if let Some(parent) = self.path.parent() {
@@ -201,9 +206,11 @@ fn shared() -> &'static Mutex<Shared> {
     SHARED.get_or_init(|| {
         let mut rows = BTreeMap::new();
         for bot in registry() {
-            for row in seed(&bot) {
-                rows.insert((row.name.clone(), row.source), row);
-            }
+            let sources = seed(&bot)
+                .into_iter()
+                .map(|row| (row.source, row))
+                .collect();
+            rows.insert(bot.name.clone(), sources);
         }
         let shared = Shared {
             rows,
@@ -303,13 +310,15 @@ impl Outcome {
 fn record(name: &str, source: Source, outcome: Outcome, prefixes: Option<usize>) {
     let mut shared = shared().lock();
     {
-        let row = shared
-            .rows
-            .get_mut(&(name.to_string(), source))
-            .expect("the row of the source");
+        let rows = shared.rows.get_mut(name).expect("the rows of the crawler");
         if let Some(prefixes) = prefixes {
-            row.prefixes = prefixes;
+            // The prefixes of a crawler are the prefixes of every one of its
+            // rows.
+            for row in rows.values_mut() {
+                row.prefixes = prefixes;
+            }
         }
+        let row = rows.get_mut(&source).expect("the row of the source");
         match outcome {
             Outcome::Healthy => {
                 row.state = State::Healthy;
@@ -322,17 +331,16 @@ fn record(name: &str, source: Source, outcome: Outcome, prefixes: Option<usize>)
                 row.detail = Some(reason);
             }
         }
+        println!(
+            "{} [{}]: {} ({} prefixes, {})",
+            row.name,
+            row.source,
+            row.state,
+            row.prefixes,
+            row.detail.as_deref().unwrap_or("no reason")
+        );
     }
     shared.write();
-    let row = &shared.rows[&(name.to_string(), source)];
-    println!(
-        "{} [{}]: {} ({} prefixes, {})",
-        row.name,
-        row.source,
-        row.state,
-        row.prefixes,
-        row.detail.as_deref().unwrap_or("no reason")
-    );
 }
 
 /// Fails the run when a source is not healthy.
@@ -348,6 +356,7 @@ fn verdict(group: Source) {
     let problems: Vec<String> = shared
         .rows
         .values()
+        .flat_map(|rows| rows.values())
         .filter(|row| whole || row.source == group)
         .filter(|row| row.state != State::Healthy && row.state != State::Skipped)
         .map(Row::describe)

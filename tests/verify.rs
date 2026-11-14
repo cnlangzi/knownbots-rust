@@ -395,9 +395,9 @@ fn a_mistral_claim_from_an_unknown_address_fails_closed() {
 ///
 /// The two paths are complementary: the published list is the only path that
 /// covers the IPv6 addresses of the crawler — the vendor keeps no reverse
-/// record for them — and the reverse DNS is the only path that covers the
-/// IPv4 ranges while the published list lags. A definition that drops one of
-/// them drops a path the vendor offers.
+/// record for them — and the vendor recommends the reverse DNS in addition to
+/// the list for the IPv4 addresses. A definition that drops one of them drops a
+/// path the vendor offers.
 #[test]
 fn the_crawler_of_common_crawl_is_verified_by_both_of_its_paths() {
     let bots = knownbots::load_bots(None).expect("the embedded registry must load");

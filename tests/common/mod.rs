@@ -3,9 +3,9 @@
 //! A crawler depends on the outside world in three ways: a published list of
 //! addresses, the reverse DNS of its vendor, or the prefixes its definition
 //! states itself. A crawler may depend on more than one of them — the vendor
-//! publishes an address space for the IPv6 addresses of its crawler and keeps
-//! the reverse DNS of the IPv4 ones. The health check and the table of the
-//! README name the sources the same way, so the classification has one owner.
+//! publishes an address space for its crawler and keeps the reverse DNS of the
+//! same addresses. The health check and the table of the README name the
+//! sources the same way, so the classification has one owner.
 
 use knownbots::Bot;
 
@@ -42,14 +42,14 @@ impl Sources {
     /// The sources a crawler depends on.
     ///
     /// A crawler that names a published document depends on `list`, a crawler
-    /// that declares a reverse DNS of its own and holds a domain depends on
-    /// `dns`, and a crawler that names neither depends on `static`.
+    /// that declares a reverse DNS of its own depends on `dns`, and a crawler
+    /// that names neither depends on `static`.
     pub fn of(bot: &Bot) -> Sources {
         let mut sources = Vec::new();
         if !bot.urls.is_empty() {
             sources.push(Source::List);
         }
-        if bot.rdns && !bot.domains.is_empty() {
+        if bot.rdns {
             sources.push(Source::Dns);
         }
         if sources.is_empty() {

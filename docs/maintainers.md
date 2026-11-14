@@ -54,7 +54,7 @@ holds two rows, and each of them carries its own state.
 | `source` | The source of the row: `list` (a published address space), `dns` (the reverse DNS of the vendor) or `static` (the crawler states its own prefixes). |
 | `state` | `healthy`, `failed`, `skipped` (no upstream to check) or `pending` (the check did not reach the source). |
 | `fault` | `environment` (the upstream or the network is at fault) or `crate` (the list arrived in a shape the crate mis-reads) — the two failures of the crate. |
-| `prefixes` | The number of prefixes the crawler holds after the check. |
+| `prefixes` | The number of prefixes the crawler holds after the check. Every row of a crawler carries the same number. |
 | `detail` | The reason of the outcome. |
 
 ## The issue
