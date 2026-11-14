@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 53, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 55, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -57,7 +57,7 @@ fn the_embedded_definitions_load() {
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 32, "the registry holds other lists");
+    assert_eq!(count(Source::List), 34, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         20,
@@ -190,6 +190,8 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("googlebot"), "Google");
     assert_eq!(vendor_for("bingbot"), "Microsoft");
     assert_eq!(vendor_for("claudebot"), "Anthropic");
+    assert_eq!(vendor_for("claude-searchbot"), "Anthropic");
+    assert_eq!(vendor_for("claude-user"), "Anthropic");
     assert_eq!(vendor_for("oai-adsbot"), "OpenAI");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
@@ -231,6 +233,44 @@ fn the_definitions_of_the_crawlers_of_openai_hold_their_fields() {
         chatgpt.domains.is_empty(),
         "the crawler has no reverse DNS source"
     );
+}
+
+/// The definitions of the crawlers of Anthropic hold the fields the vendor
+/// publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's.
+#[test]
+fn the_definitions_of_the_crawlers_of_anthropic_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let searchbot = bots
+        .iter()
+        .find(|bot| bot.name == "claude-searchbot")
+        .expect("claude-searchbot in the registry");
+    assert_eq!(searchbot.kind, BotKind::AIAssist);
+    assert_eq!(searchbot.vendor, "Anthropic");
+    assert_eq!(searchbot.ua, "Claude-SearchBot");
+    assert_eq!(searchbot.parser, "google");
+    assert_eq!(searchbot.urls, ["https://claude.com/crawling/bots.json"]);
+
+    let user = bots
+        .iter()
+        .find(|bot| bot.name == "claude-user")
+        .expect("claude-user in the registry");
+    assert_eq!(user.kind, BotKind::AIAssist);
+    assert_eq!(user.vendor, "Anthropic");
+    assert_eq!(user.ua, "Claude-User");
+    assert_eq!(user.parser, "google");
+    assert_eq!(user.urls, ["https://claude.com/crawling/bots.json"]);
+
+    let claudebot = bots
+        .iter()
+        .find(|bot| bot.name == "claudebot")
+        .expect("claudebot in the registry");
+    assert_eq!(claudebot.ua, "ClaudeBot");
+    assert_eq!(claudebot.urls, ["https://claude.com/crawling/bots.json"]);
 }
 
 #[test]

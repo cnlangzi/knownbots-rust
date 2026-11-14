@@ -223,3 +223,75 @@ fn a_chatgpt_user_claim_from_an_unknown_address_fails_closed() {
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
 }
+
+/// The crawler that improves the search results of Claude is verified by the
+/// address space Anthropic publishes.
+#[test]
+fn the_claude_searchbot_is_verified_by_the_address_space_anthropic_publishes() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("claude-searchbot", "216.73.216.0/22")
+        .unwrap();
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-SearchBot/1.0; +https://claude.com/bots)",
+        ip("216.73.216.5"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "claude-searchbot");
+    assert_eq!(result.vendor, "Anthropic");
+}
+
+/// The crawler that fetches the pages a user asks Claude about is verified by
+/// the address space Anthropic publishes.
+#[test]
+fn the_claude_user_is_verified_by_the_address_space_anthropic_publishes() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("claude-user", "34.162.191.81/32")
+        .unwrap();
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-User/1.0; +https://claude.com/bots)",
+        ip("34.162.191.81"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "claude-user");
+    assert_eq!(result.vendor, "Anthropic");
+}
+
+/// Each crawler of Anthropic holds its own address space: a prefix of one does
+/// not make a request that names another the crawler it claims to be.
+///
+/// The three crawlers download the same document, so they carry the same
+/// prefixes — but the marker decides which crawler a request claims to be, and
+/// the address decides whether it may claim it.
+#[test]
+fn the_crawlers_of_anthropic_hold_their_own_address_space() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("claude-searchbot", "216.73.216.0/22")
+        .unwrap();
+    validator
+        .seed_prefix("claude-user", "34.162.191.81/32")
+        .unwrap();
+
+    let training = validator.verify(
+        "Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://claude.com/bots)",
+        ip("216.73.216.5"),
+    );
+    assert!(!training.is_verified());
+    assert_eq!(training.status, VerifyStatus::Failed);
+
+    let search = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-SearchBot/1.0; +https://claude.com/bots)",
+        ip("34.162.191.81"),
+    );
+    assert!(!search.is_verified());
+    assert_eq!(search.status, VerifyStatus::Failed);
+
+    let user = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-User/1.0; +https://claude.com/bots)",
+        ip("216.73.216.5"),
+    );
+    assert!(!user.is_verified());
+    assert_eq!(user.status, VerifyStatus::Failed);
+}
