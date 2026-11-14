@@ -254,6 +254,14 @@ fn the_definitions_of_the_crawlers_of_anthropic_hold_their_fields() {
     assert_eq!(searchbot.ua, "Claude-SearchBot");
     assert_eq!(searchbot.parser, "google");
     assert_eq!(searchbot.urls, ["https://claude.com/crawling/bots.json"]);
+    assert!(
+        !searchbot.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        searchbot.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
 
     let user = bots
         .iter()
@@ -264,13 +272,29 @@ fn the_definitions_of_the_crawlers_of_anthropic_hold_their_fields() {
     assert_eq!(user.ua, "Claude-User");
     assert_eq!(user.parser, "google");
     assert_eq!(user.urls, ["https://claude.com/crawling/bots.json"]);
+    assert!(!user.rdns, "the crawler is verified by its published list");
+    assert!(
+        user.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
 
     let claudebot = bots
         .iter()
         .find(|bot| bot.name == "claudebot")
         .expect("claudebot in the registry");
+    assert_eq!(claudebot.kind, BotKind::AITraining);
+    assert_eq!(claudebot.vendor, "Anthropic");
     assert_eq!(claudebot.ua, "ClaudeBot");
+    assert_eq!(claudebot.parser, "google");
     assert_eq!(claudebot.urls, ["https://claude.com/crawling/bots.json"]);
+    assert!(
+        !claudebot.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        claudebot.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
 }
 
 #[test]

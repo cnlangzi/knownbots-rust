@@ -1,6 +1,6 @@
 # Claude-User - Anthropic user-initiated fetch crawler
 # https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler
-# Shares the address list of ClaudeBot; the list uses Google-style ipv4Prefix fields.
+# Shares the address list of ClaudeBot — one document for all three crawlers; the list uses Google-style ipv4Prefix fields.
 kind: AIAssist
 name: claude-user
 vendor: "Anthropic"
