@@ -291,11 +291,10 @@ async fn a_redirect_is_followed() {
     assert_eq!(prefix_count(&validator), 1);
 }
 
-/// The page of Amazon carries the document of the list, and the list of the
-/// search crawler names its prefixes under another key than the list of the
-/// training crawler.
+/// The page of Amazon carries the document of the list, and the pages of the
+/// vendor do not all name their prefixes the same way.
 #[tokio::test]
-async fn the_page_of_the_search_crawler_of_amazon_is_read() {
+async fn a_page_of_amazon_that_names_its_prefixes_otherwise_is_read() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/ips.json"))

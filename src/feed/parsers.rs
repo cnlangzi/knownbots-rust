@@ -93,7 +93,8 @@ fn parse_ahrefs(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
 ///
 /// The pages of the vendor do not all name their prefixes the same way: the
 /// list of the search crawler carries them under `ip_prefix`, the list of the
-/// user crawler under `ipv4Prefix`.
+/// user crawler under `ipv4Prefix`. Each of the two spellings carries the two
+/// address families, so the IPv6 counterpart of each is read as well.
 fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
     let text = String::from_utf8_lossy(body);
 
@@ -347,10 +348,19 @@ mod tests {
         assert_eq!(nets[0], "3.82.67.224/32".parse::<IpNet>().unwrap());
     }
 
-    /// The list of the user crawler of Amazon carries its prefixes under
-    /// another key as well.
+    /// The list of the user crawler of Amazon states its addresses without a
+    /// prefix length, so every one of them becomes a /32.
     #[test]
-    fn amazon_parser_reads_the_prefixes_of_the_user_crawler() {
+    fn amazon_parser_reads_the_addresses_of_the_user_crawler() {
+        let body = br#"<html><script>{"prefixes":[{"ipv4Prefix":"100.24.86.21"}]}</script></html>"#;
+        let nets = parse("amazon", body).unwrap();
+        assert_eq!(nets.len(), 1);
+        assert_eq!(nets[0], "100.24.86.21/32".parse::<IpNet>().unwrap());
+    }
+
+    /// The IPv6 counterpart of the second spelling of the key is read as well.
+    #[test]
+    fn amazon_parser_reads_the_ipv6_prefixes_of_the_page() {
         let body = br#"<html><script>{"prefixes":[{"ipv6_prefix":"2600::/32"}]}</script></html>"#;
         let nets = parse("amazon", body).unwrap();
         assert_eq!(nets.len(), 1);
