@@ -68,20 +68,60 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         include_str!("../../conf.d/feedfetcher.yaml"),
     ),
     (
-        "googlebot.yaml",
-        include_str!("../../conf.d/googlebot.yaml"),
+        "google-agent.yaml",
+        include_str!("../../conf.d/google-agent.yaml"),
+    ),
+    (
+        "google-cloudvertexbot.yaml",
+        include_str!("../../conf.d/google-cloudvertexbot.yaml"),
+    ),
+    (
+        "google-cws.yaml",
+        include_str!("../../conf.d/google-cws.yaml"),
+    ),
+    (
+        "google-gemininotebook.yaml",
+        include_str!("../../conf.d/google-gemininotebook.yaml"),
     ),
     (
         "google-inspectiontool.yaml",
         include_str!("../../conf.d/google-inspectiontool.yaml"),
     ),
     (
-        "googleother.yaml",
-        include_str!("../../conf.d/googleother.yaml"),
+        "google-pinpoint.yaml",
+        include_str!("../../conf.d/google-pinpoint.yaml"),
+    ),
+    (
+        "google-read-aloud.yaml",
+        include_str!("../../conf.d/google-read-aloud.yaml"),
+    ),
+    (
+        "google-safety.yaml",
+        include_str!("../../conf.d/google-safety.yaml"),
+    ),
+    (
+        "google-site-verification.yaml",
+        include_str!("../../conf.d/google-site-verification.yaml"),
     ),
     (
         "google-storebot.yaml",
         include_str!("../../conf.d/google-storebot.yaml"),
+    ),
+    (
+        "googlebot.yaml",
+        include_str!("../../conf.d/googlebot.yaml"),
+    ),
+    (
+        "googlemessages.yaml",
+        include_str!("../../conf.d/googlemessages.yaml"),
+    ),
+    (
+        "googleother.yaml",
+        include_str!("../../conf.d/googleother.yaml"),
+    ),
+    (
+        "googleproducer.yaml",
+        include_str!("../../conf.d/googleproducer.yaml"),
     ),
     ("gptbot.yaml", include_str!("../../conf.d/gptbot.yaml")),
     (

@@ -1,0 +1,9 @@
+# Google-Site-Verification - Fetches the verification token of a site on the request of its owner
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers
+kind: Monitor
+name: google-site-verification
+vendor: "Google"
+parser: google
+ua: "Google-Site-Verification"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json"

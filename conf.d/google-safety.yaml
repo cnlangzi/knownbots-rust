@@ -1,0 +1,9 @@
+# Google-Safety - Abuse-oriented crawling for malware; ignores robots.txt
+# https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers#google-safety
+kind: Security
+name: google-safety
+vendor: "Google"
+parser: google
+ua: "Google-Safety"
+urls:
+  - "https://developers.google.com/static/crawling/ipranges/special-crawlers.json"

@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 42, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 52, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -57,7 +57,7 @@ fn the_embedded_definitions_load() {
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 20, "the registry holds other lists");
+    assert_eq!(count(Source::List), 30, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         21,
