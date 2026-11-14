@@ -39,6 +39,52 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
     files
 }
 
+/// The paragraph of the documentation of the provider-health check that states
+/// the census of the registry.
+///
+/// The paragraph names the number of the crawlers, and the number of those
+/// that depend on each source. It is read as text, so that the numbers it
+/// holds are the numbers the registry holds.
+fn census_of_the_health_check() -> String {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/provider_health.rs");
+    let source = std::fs::read_to_string(&path).expect("the module must be readable");
+    let documentation = source
+        .lines()
+        .take_while(|line| line.starts_with("//!"))
+        .map(|line| line.trim_start_matches("//!").trim())
+        .collect::<Vec<_>>()
+        .join("\n");
+    documentation
+        .split("\n\n")
+        .map(|paragraph| paragraph.replace('\n', " "))
+        .find(|paragraph| {
+            paragraph
+                .chars()
+                .any(|character| character.is_ascii_digit())
+        })
+        .unwrap_or_default()
+}
+
+/// The numbers a text holds, in the order of the text.
+fn numbers(text: &str) -> Vec<usize> {
+    let mut numbers = Vec::new();
+    let mut digits = String::new();
+    for character in text.chars() {
+        if character.is_ascii_digit() {
+            digits.push(character);
+            continue;
+        }
+        if !digits.is_empty() {
+            numbers.push(digits.parse().expect("a number"));
+            digits.clear();
+        }
+    }
+    if !digits.is_empty() {
+        numbers.push(digits.parse().expect("a number"));
+    }
+    numbers
+}
+
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
@@ -53,6 +99,10 @@ fn the_embedded_definitions_load() {
 /// The check reads every source of the registry, so the numbers it names have
 /// to be the numbers the registry holds — the check itself only runs against
 /// the internet.
+///
+/// The numbers are read out of the documentation of the check, so that the two
+/// cannot drift apart: a number that drifts still reads well, and nobody
+/// learns that it lies.
 #[test]
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
@@ -61,16 +111,17 @@ fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
             .filter(|bot| Sources::of(bot).contains(&source))
             .count()
     };
-    assert_eq!(count(Source::List), 42, "the registry holds other lists");
-    assert_eq!(
+
+    let registry = vec![
+        bots.len(),
+        count(Source::List),
         count(Source::Dns),
-        20,
-        "the registry holds other reverse DNS"
-    );
-    assert_eq!(
         count(Source::Static),
-        1,
-        "the registry holds other static crawlers"
+    ];
+    let census = numbers(&census_of_the_health_check());
+    assert_eq!(
+        census, registry,
+        "the documentation of the health check names {census:?} — the crawlers, the list-backed, the DNS-backed and the static ones — the registry holds {registry:?}"
     );
 }
 

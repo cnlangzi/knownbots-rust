@@ -2,7 +2,7 @@
 //!
 //! The registry depends on the outside world: of its 60 crawlers, 42 are
 //! backed by a published address space the crate downloads, 20 by the reverse
-//! DNS of their vendor, and one states its own prefixes; the crawlers of
+//! DNS of their vendor, and 1 states its own prefixes; the crawlers of
 //! Perplexity and the crawler of Common Crawl are backed by both, and the
 //! check reads every one of their sources. The report holds one row per
 //! source, so a crawler that depends on two sources holds two rows. The check
