@@ -195,9 +195,10 @@ never holds a lock that a background task holds for long.
    the prefixes the definition of the crawler states itself.
 3. A crawler that carries a **reverse DNS** of its own is confirmed by the
    hostname of the address as well: the hostname has to end in one of the
-   domains of the crawler, and a forward lookup has to confirm it. The reverse
-   DNS is the second path of a crawler that is backed by a published document,
-   and the only path of a crawler that is not.
+   domains of the crawler, and a forward lookup has to confirm it. A crawler
+   that is verified by both is confirmed by the address space first and by the
+   reverse DNS second; the reverse DNS is the only path of a crawler that is
+   not backed by a published document.
 
 A request that cannot be verified **fails closed**. A reverse lookup that is not
 cached yet never happens on the request path: the lookup is queued, the request
@@ -273,7 +274,7 @@ is compiled into the crate.
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |
 | bingbot | Microsoft | SearchEngine | bingbot | list |
 | bytespider | ByteDance | AITraining | Bytespider | dns |
-| ccbot | CommonCrawl | AITraining | CCBot | dns |
+| ccbot | CommonCrawl | AITraining | CCBot | list+dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claude-searchbot | Anthropic | AIAssist | Claude-SearchBot | list |
 | claude-user | Anthropic | AIAssist | Claude-User | list |
@@ -306,8 +307,8 @@ is compiled into the crate.
 | mj12bot | Majestic | SEO | MJ12bot | dns |
 | oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
-| perplexity-user | Perplexity | AIAssist | Perplexity-User | list |
-| perplexitybot | Perplexity | AITraining | PerplexityBot | list |
+| perplexity-user | Perplexity | AIAssist | Perplexity-User | list+dns |
+| perplexitybot | Perplexity | AITraining | PerplexityBot | list+dns |
 | petalbot | Huawei | AITraining | PetalBot | dns |
 | pingdom | Pingdom | Monitor | Pingdom | list |
 | pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
@@ -324,8 +325,10 @@ is compiled into the crate.
 
 The `source` column tells where the address space of a crawler comes from:
 `list` (a published document the crate downloads), `dns` (the reverse DNS of
-the vendor) or `static` (the crawler states its own prefixes). A crawler that
-carries a document and a reverse DNS as well is named by its document.
+the vendor) or `static` (the crawler states its own prefixes). A crawler may
+depend on more than one source: the sources of such a crawler are written with
+a `+` between them, so `list+dns` is a crawler that is backed by a published
+document and by the reverse DNS of its vendor.
 
 A definition is a YAML document:
 

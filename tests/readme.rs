@@ -7,7 +7,7 @@ mod common;
 
 use std::path::Path;
 
-use common::Source;
+use common::{Source, Sources};
 
 /// The header row of the table of the crawlers.
 const HEADER: &str = "| bot | vendor | kind | marker | source |";
@@ -69,7 +69,7 @@ fn registry_rows() -> Vec<Vec<String>> {
                 bot.vendor.clone(),
                 format!("{:?}", bot.kind),
                 bot.ua.clone(),
-                Source::of(bot).name().to_string(),
+                Sources::of(bot).to_string(),
             ]
         })
         .collect()
@@ -111,7 +111,7 @@ fn the_table_of_the_crawlers_holds_the_registry() {
 fn a_static_crawler_states_its_own_prefixes() {
     let bots = knownbots::load_bots(None).expect("the embedded registry must load");
     for bot in &bots {
-        if Source::of(bot).name() == "static" {
+        if Sources::of(bot).contains(&Source::Static) {
             assert!(
                 !bot.custom.is_empty(),
                 "the crawler {} has no address space at all",

@@ -28,6 +28,9 @@ const MISTRAL_USER_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko
 /// The User-Agent Mistral publishes for the crawler that indexes the web.
 const MISTRAL_INDEX_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)";
 
+/// The User-Agent Common Crawl publishes for the crawler that fetches the web.
+const CCBOT_UA: &str = "CCBot/2.0 (https://commoncrawl.org/faq/)";
+
 #[test]
 fn a_claim_that_names_a_known_crawler_verifies_with_its_address() {
     let (_directory, validator) = validator();
@@ -385,4 +388,67 @@ fn a_mistral_claim_from_an_unknown_address_fails_closed() {
         assert_eq!(result.status, VerifyStatus::Failed);
         assert!(!result.is_verified());
     }
+}
+
+/// The crawler of Common Crawl is verified by the address space the vendor
+/// publishes and by the reverse DNS of its vendor.
+///
+/// The two paths are complementary: the published list is the only path that
+/// covers the IPv6 addresses of the crawler — the vendor keeps no reverse
+/// record for them — and the reverse DNS is the only path that covers the
+/// IPv4 ranges while the published list lags. A definition that drops one of
+/// them drops a path the vendor offers.
+#[test]
+fn the_crawler_of_common_crawl_is_verified_by_both_of_its_paths() {
+    let bots = knownbots::load_bots(None).expect("the embedded registry must load");
+    let ccbot = bots
+        .iter()
+        .find(|bot| bot.name == "ccbot")
+        .expect("ccbot in the registry");
+    assert_eq!(
+        ccbot.urls,
+        ["https://index.commoncrawl.org/ccbot.json"],
+        "the definition names no published address space"
+    );
+    assert!(ccbot.rdns, "the definition names no reverse DNS");
+    assert_eq!(ccbot.domains, ["commoncrawl.org"]);
+
+    let (_directory, ipv4) = validator();
+    ipv4.seed_prefix("ccbot", "3.41.188.32/29").unwrap();
+    let published = ipv4.verify(CCBOT_UA, ip("3.41.188.33"));
+    assert!(published.is_verified());
+    assert_eq!(published.name, "ccbot");
+
+    // The vendor keeps no reverse record for the IPv6 addresses of its
+    // crawler, so the published list is the only path that covers them.
+    let (_directory, ipv6) = validator();
+    ipv6.seed_prefix("ccbot", "2600:1f28:365:8000::/56")
+        .unwrap();
+    let published = ipv6.verify(CCBOT_UA, ip("2600:1f28:365:8000::1"));
+    assert!(published.is_verified());
+    assert_eq!(published.name, "ccbot");
+
+    // The reverse DNS confirms a request from an address the published address
+    // space does not cover.
+    let (_directory, reverse) = validator();
+    reverse
+        .seed_rdns("ccbot", "203.0.113.7", "crawl.commoncrawl.org")
+        .unwrap();
+    let result = reverse.verify(CCBOT_UA, ip("203.0.113.7"));
+    assert!(result.is_verified());
+    assert_eq!(result.name, "ccbot");
+    assert_eq!(result.vendor, "CommonCrawl");
+}
+
+/// A hostname outside the domains of the crawler does not confirm the request,
+/// even when the crawler carries a published address space as well.
+#[test]
+fn a_crawl_of_common_crawl_outside_its_domains_does_not_verify() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("ccbot", "203.0.113.7", "crawl.example.com")
+        .unwrap();
+    let result = validator.verify(CCBOT_UA, ip("203.0.113.7"));
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
 }

@@ -6,7 +6,7 @@ mod common;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use common::Source;
+use common::{Source, Sources};
 use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
 
 #[cfg(feature = "full")]
@@ -56,11 +56,15 @@ fn the_embedded_definitions_load() {
 #[test]
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 40, "the registry holds other lists");
+    let count = |source: Source| {
+        bots.iter()
+            .filter(|bot| Sources::of(bot).contains(&source))
+            .count()
+    };
+    assert_eq!(count(Source::List), 41, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
-        18,
+        20,
         "the registry holds other reverse DNS"
     );
     assert_eq!(
@@ -68,6 +72,29 @@ fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
         1,
         "the registry holds other static crawlers"
     );
+}
+
+/// The crawler of Common Crawl depends on two sources.
+///
+/// The vendor publishes an address space for the crawler and keeps the reverse
+/// DNS of its addresses, so the definition names both of them.
+#[test]
+fn the_crawler_of_common_crawl_depends_on_two_sources() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+    let ccbot = bots
+        .iter()
+        .find(|bot| bot.name == "ccbot")
+        .expect("ccbot in the registry");
+    let sources = Sources::of(ccbot);
+    assert!(
+        sources.contains(&Source::List),
+        "the crawler names no published address space"
+    );
+    assert!(
+        sources.contains(&Source::Dns),
+        "the crawler names no reverse DNS"
+    );
+    assert_eq!(sources.to_string(), "list+dns");
 }
 
 /// The size of the registry is the size the documentation of the matching

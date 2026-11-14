@@ -1,9 +1,13 @@
 # CCBot - Common Crawl
 # https://commoncrawl.org/faq
+# IP list: https://index.commoncrawl.org/ccbot.json (Google-style ipv4Prefix fields)
 kind: AITraining
 name: ccbot
 vendor: "CommonCrawl"
+parser: google
 ua: "CCBot"
+urls:
+  - "https://index.commoncrawl.org/ccbot.json"
 rdns: true
 domains:
   - "commoncrawl.org"

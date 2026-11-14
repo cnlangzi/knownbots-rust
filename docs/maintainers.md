@@ -1,8 +1,9 @@
 # Maintainers
 
 Every crawler of the registry depends on an outside source: a published list of
-addresses, or the DNS of a vendor. The health check reads every source of the
-registry and writes the outcome of the run to a report.
+addresses, or the DNS of a vendor. A crawler may depend on more than one of
+them. The health check reads every source of the registry and writes the
+outcome of the run to a report.
 
 ## The run
 
@@ -23,7 +24,8 @@ the crate reads.
 ## The report
 
 The run writes the report to `target/provider-health/report.json`. The report
-holds one row per crawler of the registry:
+holds one row per source of a crawler: a crawler that depends on two sources
+holds two rows, and each of them carries its own state.
 
 ```json
 {
@@ -49,7 +51,7 @@ holds one row per crawler of the registry:
 | `name` | The id of the crawler in the registry. |
 | `vendor` | The organisation that owns the crawler. |
 | `kind` | The category of the crawler. |
-| `source` | `list` (a published address space), `dns` (the reverse DNS of the vendor) or `static` (the crawler states its own prefixes). |
+| `source` | The source of the row: `list` (a published address space), `dns` (the reverse DNS of the vendor) or `static` (the crawler states its own prefixes). |
 | `state` | `healthy`, `failed`, `skipped` (no upstream to check) or `pending` (the check did not reach the source). |
 | `fault` | `environment` (the upstream or the network is at fault) or `crate` (the list arrived in a shape the crate mis-reads) — the two failures of the crate. |
 | `prefixes` | The number of prefixes the crawler holds after the check. |
