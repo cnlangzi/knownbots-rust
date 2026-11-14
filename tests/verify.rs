@@ -307,3 +307,75 @@ fn a_claude_claim_from_an_unknown_address_fails_closed() {
         assert!(!result.is_verified());
     }
 }
+
+/// The two crawlers of Mistral are verified by the address space the vendor
+/// publishes for them.
+///
+/// The vendor publishes a document of its own for each of the two crawlers, so
+/// a request is verified against the address space of the crawler its marker
+/// names.
+#[test]
+fn the_crawlers_of_mistral_are_verified_by_the_address_space_mistral_publishes() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("mistralai-user", "20.240.160.161/32")
+        .unwrap();
+    validator
+        .seed_prefix("mistralai-index", "135.225.57.92/32")
+        .unwrap();
+
+    let user = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-User/1.0; +https://docs.mistral.ai/robots)",
+        ip("20.240.160.161"),
+    );
+    assert!(user.is_verified());
+    assert_eq!(user.name, "mistralai-user");
+    assert_eq!(user.vendor, "Mistral");
+
+    let index = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)",
+        ip("135.225.57.92"),
+    );
+    assert!(index.is_verified());
+    assert_eq!(index.name, "mistralai-index");
+    assert_eq!(index.vendor, "Mistral");
+}
+
+/// The address of one crawler of Mistral does not make the request a claim of
+/// the other one.
+#[test]
+fn the_crawlers_of_mistral_do_not_share_their_address_space() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("mistralai-user", "20.240.160.161/32")
+        .unwrap();
+
+    let index = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)",
+        ip("20.240.160.161"),
+    );
+    assert_eq!(index.status, VerifyStatus::Failed);
+    assert!(!index.is_verified());
+}
+
+/// An address outside the published address space is not a crawler of Mistral,
+/// even when the request names one.
+#[test]
+fn a_mistral_claim_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("mistralai-user", "20.240.160.161/32")
+        .unwrap();
+    validator
+        .seed_prefix("mistralai-index", "135.225.57.92/32")
+        .unwrap();
+
+    for ua in [
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-User/1.0; +https://docs.mistral.ai/robots)",
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)",
+    ] {
+        let result = validator.verify(ua, ip("203.0.113.7"));
+        assert_eq!(result.status, VerifyStatus::Failed);
+        assert!(!result.is_verified());
+    }
+}

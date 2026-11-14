@@ -144,6 +144,14 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "meta-externalagent.yaml",
         include_str!("../../conf.d/meta-externalagent.yaml"),
     ),
+    (
+        "mistralai-index.yaml",
+        include_str!("../../conf.d/mistralai-index.yaml"),
+    ),
+    (
+        "mistralai-user.yaml",
+        include_str!("../../conf.d/mistralai-user.yaml"),
+    ),
     ("mj12bot.yaml", include_str!("../../conf.d/mj12bot.yaml")),
     (
         "oai-adsbot.yaml",
@@ -380,6 +388,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "amazonbot" => "Amazon",
         "meta-externalagent" | "facebookexternalhit" | "whatsapp" => "Meta",
         "perplexity-user" | "perplexitybot" => "Perplexity",
+        n if n.starts_with("mistralai") => "Mistral",
         "bytespider" => "ByteDance",
         "ccbot" => "CommonCrawl",
         "linkedinbot" => "LinkedIn",

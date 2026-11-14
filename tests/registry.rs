@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 55, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 57, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -57,7 +57,7 @@ fn the_embedded_definitions_load() {
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 36, "the registry holds other lists");
+    assert_eq!(count(Source::List), 38, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         18,
@@ -193,6 +193,8 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("claude-searchbot"), "Anthropic");
     assert_eq!(vendor_for("claude-user"), "Anthropic");
     assert_eq!(vendor_for("oai-adsbot"), "OpenAI");
+    assert_eq!(vendor_for("mistralai-user"), "Mistral");
+    assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 
@@ -294,6 +296,55 @@ fn the_definitions_of_the_crawlers_of_anthropic_hold_their_fields() {
     assert!(
         claudebot.domains.is_empty(),
         "the crawler has no reverse DNS source"
+    );
+}
+
+/// The definitions of the crawlers of Mistral hold the fields the vendor
+/// publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's.
+#[test]
+fn the_definitions_of_the_crawlers_of_mistral_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let index = bots
+        .iter()
+        .find(|bot| bot.name == "mistralai-index")
+        .expect("mistralai-index in the registry");
+    assert_eq!(index.kind, BotKind::AIAssist);
+    assert_eq!(index.vendor, "Mistral");
+    assert_eq!(index.ua, "MistralAI-Index");
+    assert_eq!(index.parser, "google");
+    assert_eq!(index.urls, ["https://mistral.ai/mistralai-index-ips.json"]);
+    assert!(!index.rdns, "the crawler is verified by its published list");
+    assert!(
+        index.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        index.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+
+    let user = bots
+        .iter()
+        .find(|bot| bot.name == "mistralai-user")
+        .expect("mistralai-user in the registry");
+    assert_eq!(user.kind, BotKind::AIAssist);
+    assert_eq!(user.vendor, "Mistral");
+    assert_eq!(user.ua, "MistralAI-User");
+    assert_eq!(user.parser, "google");
+    assert_eq!(user.urls, ["https://mistral.ai/mistralai-user-ips.json"]);
+    assert!(!user.rdns, "the crawler is verified by its published list");
+    assert!(
+        user.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        user.custom.is_empty(),
+        "the crawler states no prefix of its own"
     );
 }
 

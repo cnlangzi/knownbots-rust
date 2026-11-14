@@ -299,6 +299,8 @@ is compiled into the crate.
 | linkedinbot | LinkedIn | SocialMedia | LinkedInBot | dns |
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
 | meta-externalagent | Meta | AITraining | meta-externalagent | dns |
+| mistralai-index | Mistral | AIAssist | MistralAI-Index | list |
+| mistralai-user | Mistral | AIAssist | MistralAI-User | list |
 | mj12bot | Majestic | SEO | MJ12bot | dns |
 | oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |

@@ -1,0 +1,10 @@
+# MistralAI-User - Mistral AI user-triggered crawler for Vibe
+# https://docs.mistral.ai/robots
+# JSON format: https://mistral.ai/mistralai-user-ips.json
+kind: AIAssist
+name: mistralai-user
+vendor: "Mistral"
+parser: google
+ua: "MistralAI-User"
+urls:
+  - "https://mistral.ai/mistralai-user-ips.json"
