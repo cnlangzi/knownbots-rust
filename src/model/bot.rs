@@ -70,6 +70,13 @@ pub struct Bot {
     pub custom: Vec<IpNet>,
     /// The domains the reverse DNS of the bot has to end in.
     pub domains: Vec<String>,
+    /// The address the definition was confirmed with.
+    ///
+    /// The address is a sample of the crawler: its reverse name resolves under
+    /// one of the [`domains`](Bot::domains) and resolves forward back to the
+    /// address itself. The health check reads it to judge the source of a
+    /// crawler that is verified by its reverse DNS.
+    pub sample: Option<IpAddr>,
     /// Whether the bot carries a reverse DNS of its own.
     pub rdns: bool,
     /// The prefixes of the bot: the ones of its definition and the ones of the
@@ -125,6 +132,21 @@ impl Bot {
                 ),
             }
         }
+        let sample = match definition.sample.as_deref() {
+            None => None,
+            Some(value) => match value.parse::<IpAddr>() {
+                Ok(address) => Some(address),
+                Err(error) => {
+                    tracing::warn!(
+                        bot = %definition.name,
+                        sample = %value,
+                        %error,
+                        "the definition holds a sample that is not an address; it is skipped"
+                    );
+                    None
+                }
+            },
+        };
         Self {
             name: definition.name,
             kind: definition.kind,
@@ -134,6 +156,7 @@ impl Bot {
             urls: definition.urls,
             custom: custom.clone(),
             domains: definition.domains,
+            sample,
             rdns: definition.rdns,
             prefixes: RwLock::new(custom),
             rdns_cache: None,
@@ -263,6 +286,8 @@ pub(crate) struct BotDefinition {
     #[serde(default)]
     pub(crate) domains: Vec<String>,
     #[serde(default)]
+    pub(crate) sample: Option<String>,
+    #[serde(default)]
     pub(crate) rdns: bool,
 }
 
@@ -290,8 +315,8 @@ pub struct BotConfigError {
 mod tests {
     use super::*;
 
-    fn bot_with_custom() -> Bot {
-        Bot::from_definition(BotDefinition {
+    fn definition() -> BotDefinition {
+        BotDefinition {
             name: "testbot".into(),
             kind: BotKind::SearchEngine,
             parser: "google".into(),
@@ -300,8 +325,29 @@ mod tests {
             urls: vec!["https://example.invalid/ips.json".into()],
             custom: vec!["10.0.0.0/8".into()],
             domains: Vec::new(),
+            sample: None,
             rdns: false,
-        })
+        }
+    }
+
+    fn bot_with_custom() -> Bot {
+        Bot::from_definition(definition())
+    }
+
+    /// The sample of a definition is the address the crawler was confirmed
+    /// with. A sample that is not an address is skipped, the way a prefix that
+    /// is not a CIDR is.
+    #[test]
+    fn the_sample_of_the_definition_is_an_address() {
+        let mut confirmed = definition();
+        confirmed.sample = Some("162.142.125.1".into());
+        let bot = Bot::from_definition(confirmed);
+        assert_eq!(bot.sample, Some("162.142.125.1".parse::<IpAddr>().unwrap()));
+
+        let mut broken = definition();
+        broken.sample = Some("not-an-address".into());
+        let bot = Bot::from_definition(broken);
+        assert_eq!(bot.sample, None);
     }
 
     /// The prefixes of the definition are added once, however often the cache of
