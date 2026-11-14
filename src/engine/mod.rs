@@ -96,6 +96,10 @@ impl Validator {
     /// Builds a validator, loads the embedded (and the overridden) definitions,
     /// and hydrates the caches from disk.
     ///
+    /// The constructor removes the reverse-DNS cache of a crawler whose
+    /// definition no longer asks for the reverse DNS: the file belongs to the
+    /// crate, and no code reads it any more.
+    ///
     /// The method does **not** start the background work — call
     /// [`Validator::start_background`] for that.
     pub fn new(options: ValidatorOptions) -> Result<Arc<Self>, ConfigError> {
@@ -838,19 +842,36 @@ mod tests {
         );
     }
 
+    /// Drops a definition of a crawler of the host into the override
+    /// directory of the root.
+    ///
+    /// The crawler of the test states its own premise, so a change of the
+    /// registry cannot break it.
+    fn write_override(root: &std::path::Path, name: &str, definition: &str) {
+        let conf = root.join("conf.d");
+        std::fs::create_dir_all(&conf).unwrap();
+        std::fs::write(conf.join(format!("{name}.yaml")), definition).unwrap();
+    }
+
     /// A crawler that is no longer verified by its reverse DNS leaves no
     /// reverse-DNS cache behind.
     ///
     /// The file belongs to the crate, and the definition of the crawler states
     /// that no code reads it any more, so the constructor of the validator
-    /// removes it.
+    /// removes it. The rule is driven by the `rdns` flag of the definition, so
+    /// it holds for the definitions of a host as well.
     #[test]
     fn a_crawler_without_reverse_dns_leaves_no_cache_behind() {
         let directory = tempfile::tempdir().unwrap();
-        let bot_dir = directory.path().join("chatgpt-user");
+        write_override(
+            directory.path(),
+            "listbot",
+            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+        );
+        let bot_dir = directory.path().join("listbot");
         std::fs::create_dir_all(&bot_dir).unwrap();
         let cache = bot_dir.join("rdns.txt");
-        std::fs::write(&cache, "104.208.184.193 chatgpt-user.openai.com\n").unwrap();
+        std::fs::write(&cache, "203.0.113.7 listbot.example.com\n").unwrap();
 
         Validator::with_root(directory.path()).expect("a validator");
         assert!(!cache.exists(), "the stale cache is still there");
@@ -890,26 +911,22 @@ mod tests {
 
     /// A cache file that cannot be removed is reported, and the startup goes
     /// on: a stale file is harmless, because no code reads it any more.
-    #[cfg(unix)]
     #[test]
     fn a_cache_file_that_cannot_be_removed_does_not_stop_the_startup() {
-        use std::os::unix::fs::PermissionsExt;
-
         let directory = tempfile::tempdir().unwrap();
-        let bot_dir = directory.path().join("chatgpt-user");
+        write_override(
+            directory.path(),
+            "listbot",
+            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+        );
+        let bot_dir = directory.path().join("listbot");
         std::fs::create_dir_all(&bot_dir).unwrap();
+        // A directory in the place of the file cannot be unlinked — not even by
+        // root — so the removal fails for every user and on every platform.
         let cache = bot_dir.join("rdns.txt");
-        std::fs::write(&cache, "104.208.184.193 chatgpt-user.openai.com\n").unwrap();
-
-        let mut permissions = std::fs::metadata(&bot_dir).unwrap().permissions();
-        permissions.set_mode(0o500);
-        std::fs::set_permissions(&bot_dir, permissions).unwrap();
+        std::fs::create_dir(&cache).unwrap();
 
         let started = Validator::with_root(directory.path());
-
-        let mut permissions = std::fs::metadata(&bot_dir).unwrap().permissions();
-        permissions.set_mode(0o700);
-        std::fs::set_permissions(&bot_dir, permissions).unwrap();
 
         assert!(started.is_ok(), "the startup must go on");
         assert!(cache.exists(), "the stale cache is still there");

@@ -245,6 +245,10 @@ The crate writes three things under the root:
 | `<root>/<bot>/rdns.txt` | The cache of the reverse lookups of the crawler. |
 | `<root>/conf.d/` | The definitions of the host. |
 
+The crate removes the `rdns.txt` of a crawler whose definition no longer asks
+for the reverse DNS: the file belongs to the crate, and no code reads it any
+more.
+
 The default root is `./knownbots`, relative to the working directory of the
 process. A host that serves traffic points the root at a directory of its own.
 
