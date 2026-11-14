@@ -638,6 +638,10 @@ mod tests {
         "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
     }
 
+    fn youbot_ua() -> &'static str {
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; YouBot/1.0; +https://docs.you.com/youbot; env:prod) Chrome/X.X.X.X Safari/537.36"
+    }
+
     #[test]
     fn verified_on_seeded_cidr() {
         let directory = tempfile::tempdir().unwrap();
@@ -710,6 +714,26 @@ mod tests {
         let result = validator.verify(ua, ip);
         assert!(result.is_verified());
         assert_eq!(result.name, "facebookexternalhit");
+    }
+
+    #[test]
+    fn youbot_verifies_from_the_network_it_states() {
+        let directory = tempfile::tempdir().unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
+        let ip = IpAddr::V4(Ipv4Addr::new(68, 67, 112, 5));
+        let result = validator.verify(youbot_ua(), ip);
+        assert!(result.is_verified());
+        assert_eq!(result.name, "youbot");
+        assert_eq!(result.vendor, "You.com");
+    }
+
+    #[test]
+    fn youbot_fails_closed_outside_the_network_it_states() {
+        let directory = tempfile::tempdir().unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
+        let ip = IpAddr::V4(Ipv4Addr::new(68, 67, 113, 5));
+        let result = validator.verify(youbot_ua(), ip);
+        assert_eq!(result.status, VerifyStatus::Failed);
     }
 
     #[test]

@@ -323,6 +323,7 @@ is compiled into the crate.
 | uptimerobot | UptimeRobot | Monitor | UptimeRobot | list |
 | whatsapp | Meta | SocialMedia | WhatsApp | dns |
 | yandexbot | Yandex | SearchEngine | YandexBot | dns |
+| youbot | You.com | SearchEngine | YouBot | static |
 
 The `source` column tells where the address space of a crawler comes from:
 `list` (a published document the crate downloads), `dns` (the reverse DNS of

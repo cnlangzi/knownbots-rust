@@ -281,3 +281,7 @@ yandexbot:
   ua:
     - "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
     - "Mozilla/5.0 (compatible; YandexBot/3.0; MirrorDetector; +http://yandex.com/bots)"
+youbot:
+  url: "https://you.com/docs/youbot"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; YouBot/1.0; +https://docs.you.com/youbot; env:prod) Chrome/X.X.X.X Safari/537.36"
