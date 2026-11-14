@@ -1,9 +1,10 @@
-# OpenAI ChatGPT user agent
-# https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
+# ChatGPT-User - OpenAI crawler that fetches the pages a user asks ChatGPT about
+# https://developers.openai.com/api/docs/bots
+# JSON format: https://openai.com/chatgpt-user.json
 kind: AIAssist
 name: chatgpt-user
 vendor: "OpenAI"
+parser: google
 ua: "ChatGPT-User"
-rdns: true
-domains:
-  - "openai.com"
+urls:
+  - "https://openai.com/chatgpt-user.json"

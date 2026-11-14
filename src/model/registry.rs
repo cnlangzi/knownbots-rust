@@ -138,6 +138,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("mj12bot.yaml", include_str!("../../conf.d/mj12bot.yaml")),
     (
+        "oai-adsbot.yaml",
+        include_str!("../../conf.d/oai-adsbot.yaml"),
+    ),
+    (
         "oai-searchbot.yaml",
         include_str!("../../conf.d/oai-searchbot.yaml"),
     ),
@@ -362,7 +366,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "sogou" => "Sogou",
         "applebot" | "applebot-extended" => "Apple",
         "petalbot" => "Huawei",
-        "gptbot" | "chatgpt-user" | "oai-searchbot" => "OpenAI",
+        "gptbot" | "chatgpt-user" | "oai-searchbot" | "oai-adsbot" => "OpenAI",
         "claudebot" => "Anthropic",
         "amazonbot" => "Amazon",
         "meta-externalagent" | "facebookexternalhit" | "whatsapp" => "Meta",

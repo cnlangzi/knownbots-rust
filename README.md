@@ -266,7 +266,7 @@ is compiled into the crate.
 | bingbot | Microsoft | SearchEngine | bingbot | list |
 | bytespider | ByteDance | AITraining | Bytespider | dns |
 | ccbot | CommonCrawl | AITraining | CCBot | dns |
-| chatgpt-user | OpenAI | AIAssist | ChatGPT-User | dns |
+| chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
@@ -292,6 +292,7 @@ is compiled into the crate.
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
 | meta-externalagent | Meta | AITraining | meta-externalagent | dns |
 | mj12bot | Majestic | SEO | MJ12bot | dns |
+| oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
 | perplexity-user | Perplexity | AIAssist | Perplexity-User | dns |
 | perplexitybot | Perplexity | AITraining | PerplexityBot | dns |

@@ -178,6 +178,10 @@ mj12bot:
   url: "https://mj12bot.com/"
   ua:
     - "MJ12bot"
+oai-adsbot:
+  url: "https://developers.openai.com/api/docs/bots"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; OAI-AdsBot/1.0; +https://openai.com/adsbot"
 oai-searchbot:
   url: "https://developers.openai.com/api/docs/bots"
   ua:

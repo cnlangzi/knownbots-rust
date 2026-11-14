@@ -1,0 +1,10 @@
+# OAI-AdsBot - OpenAI crawler that checks the landing pages submitted as ads
+# https://developers.openai.com/api/docs/bots
+# JSON format: https://openai.com/adsbot.json
+kind: Monitor
+name: oai-adsbot
+vendor: "OpenAI"
+parser: google
+ua: "OAI-AdsBot"
+urls:
+  - "https://openai.com/adsbot.json"
