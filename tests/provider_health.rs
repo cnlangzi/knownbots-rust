@@ -1,11 +1,12 @@
 //! The health of every source of the registry.
 //!
-//! The registry depends on the outside world: of its 59 crawlers, 40 are
-//! backed by a published address space the crate downloads, 18 by the reverse
+//! The registry depends on the outside world: of its 59 crawlers, 41 are
+//! backed by a published address space the crate downloads, 20 by the reverse
 //! DNS of their vendor, and one states its own prefixes; the crawlers of
-//! Perplexity are backed by both, and the check reads their document. The check
-//! reads every one of those sources and writes the outcome of the run to
-//! `target/provider-health/report.json`.
+//! Perplexity and the crawler of Common Crawl are backed by both, and the
+//! check reads every one of their sources. The report holds one row per
+//! source, so a crawler that depends on two sources holds two rows. The check
+//! writes the outcome of the run to `target/provider-health/report.json`.
 //!
 //! The sources are on the public internet, so the tests are ignored: the
 //! ordinary suite of the crate never depends on the uptime of a vendor. Run
@@ -25,7 +26,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use common::Source;
+use common::{Source, Sources};
 use knownbots::{Bot, RefreshFailure, Validator, ValidatorOptions};
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -108,8 +109,8 @@ impl Serialize for Fault {
     }
 }
 
-/// One row of the report: the outcome of the check for one entry of the
-/// registry.
+/// One row of the report: the outcome of the check for one source of one
+/// entry of the registry.
 #[derive(Debug, Clone, Serialize)]
 struct Row {
     /// The id of the entry in the registry.
@@ -124,7 +125,8 @@ struct Row {
     state: State,
     /// Who is at fault, when the source is broken.
     fault: Option<Fault>,
-    /// The number of prefixes the entry holds.
+    /// The number of prefixes the entry holds — the same number on every row
+    /// of the entry.
     prefixes: usize,
     /// The reason of the outcome.
     detail: Option<String>,
@@ -133,7 +135,7 @@ struct Row {
 impl Row {
     /// The row as a line of the verdict of the run.
     fn describe(&self) -> String {
-        let mut label = format!("{} [{}", self.name, self.state);
+        let mut label = format!("{} [{}, {}", self.name, self.source, self.state);
         if let Some(fault) = self.fault {
             label.push_str(", ");
             label.push_str(&fault.to_string());
@@ -152,7 +154,8 @@ impl Row {
 struct Report {
     /// The Unix time of the start of the run.
     checked_at: u64,
-    /// One row per entry of the registry, sorted by the name of the entry.
+    /// One row per source of an entry of the registry, sorted by the name of
+    /// the entry and the source.
     sources: Vec<Row>,
 }
 
@@ -161,8 +164,8 @@ struct Report {
 /// The two tests of a binary run in parallel, so the report is written behind
 /// a lock.
 struct Shared {
-    /// One row per entry of the registry.
-    rows: BTreeMap<String, Row>,
+    /// The rows of every entry of the registry, one per source of the entry.
+    rows: BTreeMap<String, BTreeMap<Source, Row>>,
     /// The path of the report.
     path: PathBuf,
     /// The Unix time of the start of the run.
@@ -177,7 +180,11 @@ impl Shared {
     fn write(&self) {
         let report = Report {
             checked_at: self.checked_at,
-            sources: self.rows.values().cloned().collect(),
+            sources: self
+                .rows
+                .values()
+                .flat_map(|rows| rows.values().cloned())
+                .collect(),
         };
         let body = serde_json::to_string_pretty(&report).expect("the report must be serialisable");
         if let Some(parent) = self.path.parent() {
@@ -192,14 +199,18 @@ impl Shared {
 /// The state of the check, seeded from the registry.
 ///
 /// The seeding happens once, when the first group of the check starts: every
-/// entry of the registry gets a row, so that a source the check did not reach
-/// is `pending` rather than absent.
+/// source of every entry of the registry gets a row, so that a source the
+/// check did not reach is `pending` rather than absent.
 fn shared() -> &'static Mutex<Shared> {
     static SHARED: OnceLock<Mutex<Shared>> = OnceLock::new();
     SHARED.get_or_init(|| {
         let mut rows = BTreeMap::new();
         for bot in registry() {
-            rows.insert(bot.name.clone(), seed(&bot));
+            let sources = seed(&bot)
+                .into_iter()
+                .map(|row| (row.source, row))
+                .collect();
+            rows.insert(bot.name.clone(), sources);
         }
         let shared = Shared {
             rows,
@@ -232,27 +243,34 @@ fn registry() -> Vec<Bot> {
     knownbots::load_bots(None).expect("the embedded registry must load")
 }
 
-/// The row of an entry the check did not reach yet.
-fn seed(bot: &Bot) -> Row {
-    let source = Source::of(bot);
-    let (state, detail) = match source {
-        // An entry that states its own prefixes has no upstream to check.
-        Source::Static => (
-            State::Skipped,
-            Some("the entry states its own prefixes".to_string()),
-        ),
-        _ => (State::Pending, None),
-    };
-    Row {
-        name: bot.name.clone(),
-        vendor: bot.vendor.clone(),
-        kind: format!("{:?}", bot.kind),
-        source,
-        state,
-        fault: None,
-        prefixes: bot.prefix_count(),
-        detail,
-    }
+/// The rows of the sources of an entry the check did not reach yet.
+///
+/// An entry that depends on two sources gets two rows: the check of one
+/// source says nothing about the other.
+fn seed(bot: &Bot) -> Vec<Row> {
+    Sources::of(bot)
+        .into_iter()
+        .map(|source| {
+            let (state, detail) = match source {
+                // An entry that states its own prefixes has no upstream to check.
+                Source::Static => (
+                    State::Skipped,
+                    Some("the entry states its own prefixes".to_string()),
+                ),
+                _ => (State::Pending, None),
+            };
+            Row {
+                name: bot.name.clone(),
+                vendor: bot.vendor.clone(),
+                kind: format!("{:?}", bot.kind),
+                source,
+                state,
+                fault: None,
+                prefixes: bot.prefix_count(),
+                detail,
+            }
+        })
+        .collect()
 }
 
 /// The outcome of the check of a source.
@@ -289,13 +307,18 @@ impl Outcome {
 }
 
 /// Writes the outcome of a source into the report and rewrites the report.
-fn record(name: &str, outcome: Outcome, prefixes: Option<usize>) {
+fn record(name: &str, source: Source, outcome: Outcome, prefixes: Option<usize>) {
     let mut shared = shared().lock();
     {
-        let row = shared.rows.get_mut(name).expect("the row of the source");
+        let rows = shared.rows.get_mut(name).expect("the rows of the crawler");
         if let Some(prefixes) = prefixes {
-            row.prefixes = prefixes;
+            // The prefixes of a crawler are the prefixes of every one of its
+            // rows.
+            for row in rows.values_mut() {
+                row.prefixes = prefixes;
+            }
         }
+        let row = rows.get_mut(&source).expect("the row of the source");
         match outcome {
             Outcome::Healthy => {
                 row.state = State::Healthy;
@@ -308,16 +331,16 @@ fn record(name: &str, outcome: Outcome, prefixes: Option<usize>) {
                 row.detail = Some(reason);
             }
         }
+        println!(
+            "{} [{}]: {} ({} prefixes, {})",
+            row.name,
+            row.source,
+            row.state,
+            row.prefixes,
+            row.detail.as_deref().unwrap_or("no reason")
+        );
     }
     shared.write();
-    let row = &shared.rows[name];
-    println!(
-        "{}: {} ({} prefixes, {})",
-        row.name,
-        row.state,
-        row.prefixes,
-        row.detail.as_deref().unwrap_or("no reason")
-    );
 }
 
 /// Fails the run when a source is not healthy.
@@ -333,6 +356,7 @@ fn verdict(group: Source) {
     let problems: Vec<String> = shared
         .rows
         .values()
+        .flat_map(|rows| rows.values())
         .filter(|row| whole || row.source == group)
         .filter(|row| row.state != State::Healthy && row.state != State::Skipped)
         .map(Row::describe)
@@ -361,7 +385,7 @@ async fn the_published_lists_are_read() {
 
     let mut tasks = tokio::task::JoinSet::new();
     for bot in registry() {
-        if Source::of(&bot) != Source::List {
+        if !Sources::of(&bot).contains(&Source::List) {
             continue;
         }
         let validator = Arc::clone(&validator);
@@ -382,7 +406,9 @@ async fn the_published_lists_are_read() {
         // A source whose task panicked stays `pending`: the run fails on it,
         // and the other sources are still checked.
         match joined {
-            Ok((name, failure, prefixes)) => record(&name, Outcome::of(failure), Some(prefixes)),
+            Ok((name, failure, prefixes)) => {
+                record(&name, Source::List, Outcome::of(failure), Some(prefixes))
+            }
             Err(error) => eprintln!("a source could not be checked: {error}"),
         }
     }
@@ -399,7 +425,7 @@ async fn the_published_lists_are_read() {
 async fn the_domains_of_the_crawlers_resolve() {
     let mut tasks = tokio::task::JoinSet::new();
     for bot in registry() {
-        if Source::of(&bot) != Source::Dns {
+        if !Sources::of(&bot).contains(&Source::Dns) {
             continue;
         }
         let name = bot.name.clone();
@@ -422,7 +448,7 @@ async fn the_domains_of_the_crawlers_resolve() {
                         reason,
                     },
                 };
-                record(&name, outcome, None);
+                record(&name, Source::Dns, outcome, None);
             }
             Err(error) => eprintln!("a source could not be checked: {error}"),
         }
