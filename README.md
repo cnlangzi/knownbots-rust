@@ -193,9 +193,11 @@ never holds a lock that a background task holds for long.
 2. The address of the request has to fall into the address space of the matched
    crawler. The address space is the set of prefixes the vendor published, plus
    the prefixes the definition of the crawler states itself.
-3. A crawler that is verified by its **reverse DNS** instead is confirmed by the
-   hostname of the address: the hostname has to end in one of the domains of the
-   crawler, and a forward lookup has to confirm it.
+3. A crawler that carries a **reverse DNS** of its own is confirmed by the
+   hostname of the address as well: the hostname has to end in one of the
+   domains of the crawler, and a forward lookup has to confirm it. The reverse
+   DNS is the second path of a crawler that is backed by a published document,
+   and the only path of a crawler that is not.
 
 A request that cannot be verified **fails closed**. A reverse lookup that is not
 cached yet never happens on the request path: the lookup is queued, the request
@@ -300,8 +302,8 @@ is compiled into the crate.
 | mj12bot | Majestic | SEO | MJ12bot | dns |
 | oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
-| perplexity-user | Perplexity | AIAssist | Perplexity-User | dns |
-| perplexitybot | Perplexity | AITraining | PerplexityBot | dns |
+| perplexity-user | Perplexity | AIAssist | Perplexity-User | list |
+| perplexitybot | Perplexity | AITraining | PerplexityBot | list |
 | petalbot | Huawei | AITraining | PetalBot | dns |
 | pingdom | Pingdom | Monitor | Pingdom | list |
 | pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
@@ -318,7 +320,8 @@ is compiled into the crate.
 
 The `source` column tells where the address space of a crawler comes from:
 `list` (a published document the crate downloads), `dns` (the reverse DNS of
-the vendor) or `static` (the crawler states its own prefixes).
+the vendor) or `static` (the crawler states its own prefixes). A crawler that
+carries a document and a reverse DNS as well is named by its document.
 
 A definition is a YAML document:
 
@@ -342,7 +345,7 @@ urls:
 | `urls` | The documents the crawler publishes its address space in. |
 | `custom` | The prefixes the definition states itself. |
 | `domains` | The domains the reverse DNS of the crawler has to end in. |
-| `rdns` | Whether the crawler is verified by its reverse DNS. |
+| `rdns` | Whether the crawler carries a reverse DNS of its own. |
 
 The parsers the crate knows are:
 
@@ -418,8 +421,10 @@ fn main() {
 
 The state of a crawler is `Ready` when its address space is loaded, `Cold`
 when it is backed by a document that was never downloaded, and `Failed` when
-the last refresh failed. A crawler that is verified by its reverse DNS has no
-document to download and is always `Ready`.
+the last refresh failed. A crawler that carries a reverse DNS and no document
+is always `Ready`. The state describes the document of a crawler that has one:
+it keeps verifying through its reverse DNS while the document is empty or its
+refresh failed.
 
 ## The parts you can use on their own
 

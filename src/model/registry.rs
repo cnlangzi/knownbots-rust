@@ -346,7 +346,8 @@ pub fn load_bots(override_dir: Option<&Path>) -> Result<Vec<Bot>, ConfigError> {
 /// The bots that are backed by a document and hold no prefix yet.
 ///
 /// A fresh process (no cache yet) sits in this window until the first refresh
-/// succeeds. Claims against these bots fail closed.
+/// succeeds. A claim against one of them fails closed, unless the bot carries a
+/// reverse DNS as well: that path decides until the document arrives.
 pub(crate) fn count_cold_url_bots(bots: &[Bot]) -> usize {
     bots.iter()
         .filter(|bot| !bot.urls.is_empty() && bot.prefixes.read().is_empty())

@@ -1,9 +1,13 @@
 # PerplexityBot - Perplexity AI crawler
-# https://docs.perplexity.ai/guides/bots
+# https://docs.perplexity.ai/docs/resources/perplexity-crawlers
+# JSON format: https://www.perplexity.ai/perplexitybot.json
 kind: AITraining
 name: perplexitybot
 vendor: "Perplexity"
+parser: google
 ua: "PerplexityBot"
 rdns: true
 domains:
   - "perplexity.ai"
+urls:
+  - "https://www.perplexity.ai/perplexitybot.json"

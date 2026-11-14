@@ -131,7 +131,7 @@ impl Validator {
         if cold > 0 {
             tracing::warn!(
                 cold,
-                "knownbots: cold start, the bots that are backed by a document are unverified until the first refresh succeeds"
+                "knownbots: cold start, the address space of the crawlers that are backed by a document is empty until the first refresh succeeds"
             );
         }
 
