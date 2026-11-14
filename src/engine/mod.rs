@@ -96,6 +96,10 @@ impl Validator {
     /// Builds a validator, loads the embedded (and the overridden) definitions,
     /// and hydrates the caches from disk.
     ///
+    /// The constructor removes the reverse-DNS cache of a crawler whose
+    /// definition no longer asks for the reverse DNS: the file belongs to the
+    /// crate, and no code reads it any more.
+    ///
     /// The method does **not** start the background work — call
     /// [`Validator::start_background`] for that.
     pub fn new(options: ValidatorOptions) -> Result<Arc<Self>, ConfigError> {
@@ -112,6 +116,14 @@ impl Validator {
             if bot.rdns {
                 bot.rdns_cache = Some(Arc::new(RdnsCache::open(bot_dir.join("rdns.txt"))?));
                 bot.fail_cache = Some(Arc::new(FailLru::new(config.fail_limit)));
+            } else {
+                let stale = bot_dir.join("rdns.txt");
+                if let Err(error) = remove_stale_rdns_cache(&stale) {
+                    tracing::warn!(
+                        "knownbots: the stale rdns cache {} could not be removed: {error}",
+                        stale.display()
+                    );
+                }
             }
         }
 
@@ -591,6 +603,20 @@ impl Validator {
     }
 }
 
+/// Removes the reverse-DNS cache a previous definition left behind.
+///
+/// The file belongs to the crate, and the definition of the crawler states that
+/// no code reads it any more, so the crate removes it. A file that is not there
+/// is not an error — the crawler never had one. Any other failure is reported
+/// to the caller: a stale file is harmless, and the startup goes on.
+fn remove_stale_rdns_cache(path: &Path) -> std::io::Result<()> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
 /// The validator stops its worker thread when it is dropped.
 ///
 /// The thread holds the validator weakly, so it never keeps the validator
@@ -814,5 +840,95 @@ mod tests {
             "message must name the parse failure: {}",
             errors[0].message
         );
+    }
+
+    /// Drops a definition of a crawler of the host into the override
+    /// directory of the root.
+    ///
+    /// The crawler of the test states its own premise, so a change of the
+    /// registry cannot break it.
+    fn write_override(root: &std::path::Path, name: &str, definition: &str) {
+        let conf = root.join("conf.d");
+        std::fs::create_dir_all(&conf).unwrap();
+        std::fs::write(conf.join(format!("{name}.yaml")), definition).unwrap();
+    }
+
+    /// A crawler that is no longer verified by its reverse DNS leaves no
+    /// reverse-DNS cache behind.
+    ///
+    /// The file belongs to the crate, and the definition of the crawler states
+    /// that no code reads it any more, so the constructor of the validator
+    /// removes it. The rule is driven by the `rdns` flag of the definition, so
+    /// it holds for the definitions of a host as well.
+    #[test]
+    fn a_crawler_without_reverse_dns_leaves_no_cache_behind() {
+        let directory = tempfile::tempdir().unwrap();
+        write_override(
+            directory.path(),
+            "listbot",
+            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+        );
+        let bot_dir = directory.path().join("listbot");
+        std::fs::create_dir_all(&bot_dir).unwrap();
+        let cache = bot_dir.join("rdns.txt");
+        std::fs::write(&cache, "203.0.113.7 listbot.example.com\n").unwrap();
+
+        Validator::with_root(directory.path()).expect("a validator");
+        assert!(!cache.exists(), "the stale cache is still there");
+    }
+
+    /// A crawler that is verified by its reverse DNS keeps its cache file and
+    /// reads it.
+    #[test]
+    fn a_reverse_dns_crawler_keeps_its_cache_and_reads_it() {
+        let directory = tempfile::tempdir().unwrap();
+        let bot_dir = directory.path().join("baiduspider");
+        std::fs::create_dir_all(&bot_dir).unwrap();
+        let cache = bot_dir.join("rdns.txt");
+        std::fs::write(&cache, "220.181.108.94 crawl.baidu.com\n").unwrap();
+
+        let validator = Validator::with_root(directory.path()).unwrap();
+        let ip = IpAddr::V4(Ipv4Addr::new(220, 181, 108, 94));
+        let ua =
+            "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)";
+        let result = validator.verify(ua, ip);
+        assert!(result.is_verified());
+        assert_eq!(result.name, "baiduspider");
+        assert!(
+            cache.exists(),
+            "the cache of a reverse-DNS crawler was removed"
+        );
+    }
+
+    /// A cache file that is not there is not a failure — the crawler never had
+    /// one, and the removal of it stays silent.
+    #[test]
+    fn a_missing_cache_file_is_not_a_failure() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("rdns.txt");
+        remove_stale_rdns_cache(&path).expect("a missing file is not a failure");
+    }
+
+    /// A cache file that cannot be removed is reported, and the startup goes
+    /// on: a stale file is harmless, because no code reads it any more.
+    #[test]
+    fn a_cache_file_that_cannot_be_removed_does_not_stop_the_startup() {
+        let directory = tempfile::tempdir().unwrap();
+        write_override(
+            directory.path(),
+            "listbot",
+            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+        );
+        let bot_dir = directory.path().join("listbot");
+        std::fs::create_dir_all(&bot_dir).unwrap();
+        // A directory in the place of the file cannot be unlinked — not even by
+        // root — so the removal fails for every user and on every platform.
+        let cache = bot_dir.join("rdns.txt");
+        std::fs::create_dir(&cache).unwrap();
+
+        let started = Validator::with_root(directory.path());
+
+        assert!(started.is_ok(), "the startup must go on");
+        assert!(cache.exists(), "the stale cache is still there");
     }
 }

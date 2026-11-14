@@ -1,7 +1,7 @@
 //! The health of every source of the registry.
 //!
-//! The registry depends on the outside world: of its 52 crawlers, 30 are
-//! backed by a published address space the crate downloads, 21 are verified by
+//! The registry depends on the outside world: of its 53 crawlers, 32 are
+//! backed by a published address space the crate downloads, 20 are verified by
 //! the reverse DNS of their vendor, and one states its own prefixes. The check
 //! reads every one of those sources and writes the outcome of the run to
 //! `target/provider-health/report.json`.

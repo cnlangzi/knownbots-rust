@@ -10,7 +10,7 @@
 //! several markers match, the **longest** wins so that the more specific bot
 //! is preferred.
 //!
-//! Matching is a linear scan over the table of the registry (~52 entries). That
+//! Matching is a linear scan over the table of the registry (~53 entries). That
 //! beats a per-byte index once the longest match forces a full pass anyway, and
 //! keeps the request path branch-predictable.
 

@@ -245,6 +245,10 @@ The crate writes three things under the root:
 | `<root>/<bot>/rdns.txt` | The cache of the reverse lookups of the crawler. |
 | `<root>/conf.d/` | The definitions of the host. |
 
+The crate removes the `rdns.txt` of a crawler whose definition no longer asks
+for the reverse DNS: the file belongs to the crate, and no code reads it any
+more.
+
 The default root is `./knownbots`, relative to the working directory of the
 process. A host that serves traffic points the root at a directory of its own.
 
@@ -266,7 +270,7 @@ is compiled into the crate.
 | bingbot | Microsoft | SearchEngine | bingbot | list |
 | bytespider | ByteDance | AITraining | Bytespider | dns |
 | ccbot | CommonCrawl | AITraining | CCBot | dns |
-| chatgpt-user | OpenAI | AIAssist | ChatGPT-User | dns |
+| chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
@@ -292,6 +296,7 @@ is compiled into the crate.
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
 | meta-externalagent | Meta | AITraining | meta-externalagent | dns |
 | mj12bot | Majestic | SEO | MJ12bot | dns |
+| oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
 | perplexity-user | Perplexity | AIAssist | Perplexity-User | dns |
 | perplexitybot | Perplexity | AITraining | PerplexityBot | dns |

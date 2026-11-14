@@ -160,3 +160,66 @@ fn the_prefixes_of_the_definition_verify_the_request() {
     assert!(result.is_verified());
     assert_eq!(result.name, "facebookexternalhit");
 }
+
+/// The marker of the crawler of OpenAI sits inside the marker of the crawler of
+/// Google, so the longest marker has to claim the request.
+#[test]
+fn the_adsbot_of_openai_is_not_the_adsbot_of_google() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("oai-adsbot", "130.131.229.128/25")
+        .unwrap();
+    let result = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; OAI-AdsBot/1.0; +https://openai.com/adsbot",
+        ip("130.131.229.129"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "oai-adsbot");
+    assert_eq!(result.vendor, "OpenAI");
+}
+
+/// The marker of the crawler of Google is not the marker of the crawler of
+/// OpenAI.
+#[test]
+fn the_adsbot_of_google_stays_the_adsbot_of_google() {
+    let (_directory, validator) = validator();
+    validator.seed_prefix("adsbot", "66.249.64.0/19").unwrap();
+    let result = validator.verify(
+        "AdsBot-Google (+http://www.google.com/adsbot.html)",
+        ip("66.249.66.1"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "adsbot");
+}
+
+/// The crawler that fetches the pages a user asks ChatGPT about is verified by
+/// the address space the vendor publishes.
+#[test]
+fn the_chatgpt_user_is_verified_by_the_address_space_openai_publishes() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("chatgpt-user", "104.208.184.192/28")
+        .unwrap();
+    let result = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot",
+        ip("104.208.184.193"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "chatgpt-user");
+}
+
+/// An address outside the published address space is not the crawler, even when
+/// the request names it.
+#[test]
+fn a_chatgpt_user_claim_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("chatgpt-user", "104.208.184.192/28")
+        .unwrap();
+    let result = validator.verify(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot",
+        ip("203.0.113.7"),
+    );
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
+}
