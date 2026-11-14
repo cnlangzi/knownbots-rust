@@ -423,6 +423,7 @@ mod tests {
     use crate::index::prefix;
     use ipnet::IpNet;
     use std::collections::HashSet;
+    use std::net::IpAddr;
 
     #[test]
     fn load_embedded_has_googlebot() {
@@ -715,6 +716,15 @@ mod tests {
                 if let Err(error) = cidr.parse::<IpNet>() {
                     violations.push(format!("{filename}: invalid custom CIDR {cidr:?}: {error}"));
                 }
+            }
+
+            // A stated `sample:` must be an address. The loader skips a bad one
+            // with a warning, so the health check would judge the bot by no
+            // sample at all.
+            if let Some(sample) = &definition.sample
+                && let Err(error) = sample.parse::<IpAddr>()
+            {
+                violations.push(format!("{filename}: invalid sample {sample:?}: {error}"));
             }
 
             // The definition is accepted by the loader.

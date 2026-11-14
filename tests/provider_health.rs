@@ -21,6 +21,7 @@
 mod common;
 
 use std::collections::BTreeMap;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
@@ -418,8 +419,11 @@ async fn the_published_lists_are_read() {
 
 /// Checks every source that is the reverse DNS of a vendor.
 ///
-/// The domains of the definition are resolved in the forward direction, which
-/// is the confirmation the crate needs to answer for a reverse record.
+/// A crawler that states the sample it was confirmed with is judged by that
+/// sample: its reverse name has to resolve under one of the crawler's domains
+/// and has to resolve forward back to the sample — the two conditions the
+/// crate needs to answer for a reverse record. A crawler that states no sample
+/// is judged by its domains, which are resolved in the forward direction.
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "the endpoints of the vendors are on the public internet"]
 async fn the_domains_of_the_crawlers_resolve() {
@@ -430,8 +434,12 @@ async fn the_domains_of_the_crawlers_resolve() {
         }
         let name = bot.name.clone();
         let domains = bot.domains.clone();
+        let sample = bot.sample;
         tasks.spawn(async move {
-            let failure = check_domains(&domains).await;
+            let failure = match sample {
+                Some(sample) => check_sample(sample, &domains).await,
+                None => check_domains(&domains).await,
+            };
             (name, failure)
         });
     }
@@ -455,6 +463,75 @@ async fn the_domains_of_the_crawlers_resolve() {
     }
 
     verdict(Source::Dns);
+}
+
+/// Checks the sample of a crawler: the reverse name of the sample has to
+/// resolve under one of the crawler's domains and has to resolve forward back
+/// to the sample.
+async fn check_sample(sample: IpAddr, domains: &[String]) -> Option<String> {
+    let lookup = match tokio::time::timeout(
+        RESOLVE_TIMEOUT,
+        tokio::task::spawn_blocking(move || reverse_name(sample)),
+    )
+    .await
+    {
+        Ok(Ok(lookup)) => lookup,
+        Ok(Err(error)) => return Some(format!("{sample}: {error}")),
+        Err(_) => {
+            return Some(format!(
+                "{sample} did not resolve within {}s",
+                RESOLVE_TIMEOUT.as_secs()
+            ));
+        }
+    };
+    let reverse = match lookup {
+        Ok(Some(reverse)) => reverse,
+        Ok(None) => return Some(format!("{sample} has no reverse name")),
+        Err(error) => return Some(format!("{sample}: {error}")),
+    };
+    if !knownbots::match_domain(&reverse, domains) {
+        return Some(format!(
+            "the reverse name {reverse} of {sample} is under none of the domains of the crawler"
+        ));
+    }
+    let host = reverse.clone();
+    let confirmation = match tokio::time::timeout(
+        RESOLVE_TIMEOUT,
+        tokio::task::spawn_blocking(move || confirms(&host, sample)),
+    )
+    .await
+    {
+        Ok(Ok(confirmation)) => confirmation,
+        Ok(Err(error)) => return Some(format!("the reverse name {reverse}: {error}")),
+        Err(_) => {
+            return Some(format!(
+                "the reverse name {reverse} did not resolve within {}s",
+                RESOLVE_TIMEOUT.as_secs()
+            ));
+        }
+    };
+    match confirmation {
+        Ok(true) => None,
+        Ok(false) => Some(format!(
+            "the reverse name {reverse} no longer resolves to {sample}"
+        )),
+        Err(error) => Some(format!("the reverse name {reverse}: {error}")),
+    }
+}
+
+/// The reverse name of an address, without the trailing dot.
+fn reverse_name(address: IpAddr) -> Result<Option<String>, String> {
+    match dns_lookup::lookup_addr(&address) {
+        Ok(name) => Ok(Some(name.trim_end_matches('.').to_string())),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+/// Whether a hostname resolves to an address.
+fn confirms(host: &str, address: IpAddr) -> Result<bool, String> {
+    dns_lookup::lookup_host(host)
+        .map(|hosts| hosts.contains(&address))
+        .map_err(|error| error.to_string())
 }
 
 /// Resolves every domain of a source and names the ones that do not resolve.

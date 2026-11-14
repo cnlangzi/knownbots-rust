@@ -352,6 +352,7 @@ urls:
 | `urls` | The documents the crawler publishes its address space in. |
 | `custom` | The prefixes the definition states itself. |
 | `domains` | The domains the reverse DNS of the crawler has to end in. |
+| `sample` | The address the crawler was confirmed with. Its reverse name resolves under one of the `domains` and resolves forward back to the address. |
 | `rdns` | Whether the crawler carries a reverse DNS of its own. |
 
 The parsers the crate knows are:
@@ -378,6 +379,11 @@ domains:
   - "baidu.com"
   - "baidu.jp"
 ```
+
+The optional `sample` is the address the definition was confirmed with: its
+reverse name resolves under one of the `domains` and resolves forward back to
+the address itself. The health check reads it to judge the source of a crawler
+that is verified by its reverse DNS.
 
 ## Crawlers of your own
 

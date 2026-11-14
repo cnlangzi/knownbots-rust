@@ -93,6 +93,7 @@ mod tests {
             urls: Vec::new(),
             custom: Vec::new(),
             domains: Vec::new(),
+            sample: None,
             rdns: false,
             prefixes: RwLock::new(Vec::new()),
             rdns_cache: None,
