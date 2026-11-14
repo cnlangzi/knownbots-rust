@@ -266,6 +266,8 @@ is compiled into the crate.
 | adsbot-mobile | Google | Monitor | AdsBot-Google-Mobile | list |
 | ahrefsbot | Ahrefs | SEO | AhrefsBot | list |
 | amazonbot | Amazon | AITraining | Amazonbot | list |
+| amzn-searchbot | Amazon | AIAssist | Amzn-SearchBot | list |
+| amzn-user | Amazon | AIAssist | Amzn-User | list |
 | apis-google | Google | Monitor | APIs-Google | list |
 | applebot | Apple | SearchEngine | Applebot | list |
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |

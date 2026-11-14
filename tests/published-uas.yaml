@@ -36,6 +36,14 @@ amazonbot:
   url: "https://developer.amazon.com/amazonbot/"
   ua:
     - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amazonbot/0.1) Chrome/W.X.Y.Z Safari/537.36"
+amzn-searchbot:
+  url: "https://developer.amazon.com/amazonbot/"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amzn-SearchBot/0.1) Chrome/W.X.Y.Z Safari/537.36"
+amzn-user:
+  url: "https://developer.amazon.com/amazonbot/"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amzn-User/0.1) Chrome/W.X.Y.Z Safari/537.36"
 apis-google:
   url: "https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers"
   ua:

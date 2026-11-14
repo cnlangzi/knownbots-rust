@@ -25,6 +25,14 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         include_str!("../../conf.d/amazonbot.yaml"),
     ),
     (
+        "amzn-searchbot.yaml",
+        include_str!("../../conf.d/amzn-searchbot.yaml"),
+    ),
+    (
+        "amzn-user.yaml",
+        include_str!("../../conf.d/amzn-user.yaml"),
+    ),
+    (
         "apis-google.yaml",
         include_str!("../../conf.d/apis-google.yaml"),
     ),
@@ -385,7 +393,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "petalbot" => "Huawei",
         "gptbot" | "chatgpt-user" | "oai-searchbot" | "oai-adsbot" => "OpenAI",
         n if n.starts_with("claude") => "Anthropic",
-        "amazonbot" => "Amazon",
+        "amazonbot" | "amzn-searchbot" | "amzn-user" => "Amazon",
         "meta-externalagent" | "facebookexternalhit" | "whatsapp" => "Meta",
         "perplexity-user" | "perplexitybot" => "Perplexity",
         n if n.starts_with("mistralai") => "Mistral",
