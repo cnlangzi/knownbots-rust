@@ -1,0 +1,10 @@
+# Claude-SearchBot - Anthropic AI search crawler
+# https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler
+# Shares the address list of ClaudeBot — one document for all three crawlers; the list uses Google-style ipv4Prefix fields.
+kind: AIAssist
+name: claude-searchbot
+vendor: "Anthropic"
+parser: google
+ua: "Claude-SearchBot"
+urls:
+  - "https://claude.com/crawling/bots.json"

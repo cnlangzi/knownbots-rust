@@ -66,6 +66,14 @@ chatgpt-user:
   url: "https://developers.openai.com/api/docs/bots"
   ua:
     - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot"
+claude-searchbot:
+  url: "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+  ua:
+    - "Claude-SearchBot"
+claude-user:
+  url: "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+  ua:
+    - "Claude-User"
 claudebot:
   url: "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
   ua:

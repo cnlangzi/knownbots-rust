@@ -223,3 +223,87 @@ fn a_chatgpt_user_claim_from_an_unknown_address_fails_closed() {
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
 }
+
+/// The three crawlers of Anthropic share one published address space.
+///
+/// The vendor publishes one document for ClaudeBot, Claude-SearchBot and
+/// Claude-User, and every crawler that names it downloads it for itself — so
+/// they hold the same prefixes. The marker decides which crawler a request
+/// claims to be, and the address decides whether it may claim it.
+#[test]
+fn the_crawlers_of_anthropic_share_the_published_address_space() {
+    let (_directory, validator) = validator();
+    for bot in ["claudebot", "claude-searchbot", "claude-user"] {
+        validator.seed_prefix(bot, "216.73.216.0/22").unwrap();
+    }
+
+    let training = validator.verify(
+        "Mozilla/5.0 (compatible; ClaudeBot/1.0)",
+        ip("216.73.216.5"),
+    );
+    assert!(training.is_verified());
+    assert_eq!(training.name, "claudebot");
+    assert_eq!(training.vendor, "Anthropic");
+
+    let search = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-SearchBot/1.0)",
+        ip("216.73.216.5"),
+    );
+    assert!(search.is_verified());
+    assert_eq!(search.name, "claude-searchbot");
+    assert_eq!(search.vendor, "Anthropic");
+
+    let user = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-User/1.0)",
+        ip("216.73.216.5"),
+    );
+    assert!(user.is_verified());
+    assert_eq!(user.name, "claude-user");
+    assert_eq!(user.vendor, "Anthropic");
+}
+
+/// A request is verified against the address space of the crawler its marker
+/// names, not against the address space of another crawler of the same vendor.
+///
+/// The prefix is seeded into one crawler alone, so the request that names
+/// another one has nothing to be verified against — and fails closed.
+#[test]
+fn a_request_is_verified_against_the_address_space_of_the_crawler_its_marker_names() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("claude-searchbot", "216.73.216.0/22")
+        .unwrap();
+
+    let search = validator.verify(
+        "Mozilla/5.0 (compatible; Claude-SearchBot/1.0)",
+        ip("216.73.216.5"),
+    );
+    assert!(search.is_verified());
+
+    let training = validator.verify(
+        "Mozilla/5.0 (compatible; ClaudeBot/1.0)",
+        ip("216.73.216.5"),
+    );
+    assert!(!training.is_verified());
+    assert_eq!(training.status, VerifyStatus::Failed);
+}
+
+/// An address outside the published address space is not a crawler of
+/// Anthropic, even when the request names one.
+#[test]
+fn a_claude_claim_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    for bot in ["claudebot", "claude-searchbot", "claude-user"] {
+        validator.seed_prefix(bot, "216.73.216.0/22").unwrap();
+    }
+
+    for ua in [
+        "Mozilla/5.0 (compatible; ClaudeBot/1.0)",
+        "Mozilla/5.0 (compatible; Claude-SearchBot/1.0)",
+        "Mozilla/5.0 (compatible; Claude-User/1.0)",
+    ] {
+        let result = validator.verify(ua, ip("203.0.113.7"));
+        assert_eq!(result.status, VerifyStatus::Failed);
+        assert!(!result.is_verified());
+    }
+}

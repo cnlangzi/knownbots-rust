@@ -271,6 +271,8 @@ is compiled into the crate.
 | bytespider | ByteDance | AITraining | Bytespider | dns |
 | ccbot | CommonCrawl | AITraining | CCBot | dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
+| claude-searchbot | Anthropic | AIAssist | Claude-SearchBot | list |
+| claude-user | Anthropic | AIAssist | Claude-User | list |
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
