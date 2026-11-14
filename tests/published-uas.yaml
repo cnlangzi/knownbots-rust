@@ -94,6 +94,10 @@ discordbot:
   url: "https://support.discord.com/hc/en-us/articles/42500550752919-About-Discord-Link-Previews-and-the-Discordbot"
   ua:
     - "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
+duckassistbot:
+  url: "https://duckduckgo.com/duckassistbot.html"
+  ua:
+    - "DuckAssistBot/1.2; (+http://duckduckgo.com/duckassistbot.html)"
 duckduckbot:
   url: "https://duckduckgo.com/duckduckbot.html"
   ua:

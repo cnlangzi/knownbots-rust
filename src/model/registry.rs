@@ -72,6 +72,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         include_str!("../../conf.d/discordbot.yaml"),
     ),
     (
+        "duckassistbot.yaml",
+        include_str!("../../conf.d/duckassistbot.yaml"),
+    ),
+    (
         "duckduckbot.yaml",
         include_str!("../../conf.d/duckduckbot.yaml"),
     ),
@@ -387,7 +391,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "bingbot" => "Microsoft",
         "baiduspider" => "Baidu",
         "yandexbot" => "Yandex",
-        "duckduckbot" => "DuckDuckGo",
+        "duckduckbot" | "duckassistbot" => "DuckDuckGo",
         "sogou" => "Sogou",
         "applebot" | "applebot-extended" => "Apple",
         "petalbot" => "Huawei",

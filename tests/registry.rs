@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 59, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 60, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -61,7 +61,7 @@ fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
             .filter(|bot| Sources::of(bot).contains(&source))
             .count()
     };
-    assert_eq!(count(Source::List), 41, "the registry holds other lists");
+    assert_eq!(count(Source::List), 42, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         20,
@@ -224,6 +224,7 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("amzn-user"), "Amazon");
     assert_eq!(vendor_for("mistralai-user"), "Mistral");
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
+    assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 
@@ -423,6 +424,57 @@ fn the_definitions_of_the_crawlers_of_amazon_hold_their_fields() {
     assert!(!user.rdns, "the crawler is verified by its published list");
     assert!(
         user.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+}
+
+/// The definitions of the crawlers of DuckDuckGo hold the fields the vendor
+/// publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's.
+#[test]
+fn the_definitions_of_the_crawlers_of_duckduck_go_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let assist = bots
+        .iter()
+        .find(|bot| bot.name == "duckassistbot")
+        .expect("duckassistbot in the registry");
+    assert_eq!(assist.kind, BotKind::AIAssist);
+    assert_eq!(assist.vendor, "DuckDuckGo");
+    assert_eq!(assist.ua, "DuckAssistBot");
+    assert_eq!(assist.parser, "google");
+    assert_eq!(assist.urls, ["https://duckduckgo.com/duckassistbot.json"]);
+    assert!(
+        !assist.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        assist.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        assist.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+
+    let search = bots
+        .iter()
+        .find(|bot| bot.name == "duckduckbot")
+        .expect("duckduckbot in the registry");
+    assert_eq!(search.kind, BotKind::SearchEngine);
+    assert_eq!(search.vendor, "DuckDuckGo");
+    assert_eq!(search.ua, "DuckDuckBot");
+    assert_eq!(search.parser, "google");
+    assert_eq!(search.urls, ["https://duckduckgo.com/duckduckbot.json"]);
+    assert!(
+        !search.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        search.domains.is_empty(),
         "the crawler has no reverse DNS source"
     );
 }

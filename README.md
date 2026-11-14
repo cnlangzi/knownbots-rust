@@ -281,6 +281,7 @@ is compiled into the crate.
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
+| duckassistbot | DuckDuckGo | AIAssist | DuckAssistBot | list |
 | duckduckbot | DuckDuckGo | SearchEngine | DuckDuckBot | list |
 | facebookexternalhit | Meta | SocialMedia | facebookexternalhit | static |
 | feedfetcher | Google | SearchEngine | FeedFetcher | list |

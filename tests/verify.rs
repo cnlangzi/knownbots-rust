@@ -31,6 +31,14 @@ const MISTRAL_INDEX_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Geck
 /// The User-Agent Common Crawl publishes for the crawler that fetches the web.
 const CCBOT_UA: &str = "CCBot/2.0 (https://commoncrawl.org/faq/)";
 
+/// The User-Agent DuckDuckGo publishes for the crawler that fetches the pages
+/// of its AI-assisted answers.
+const DUCK_ASSIST_UA: &str = "DuckAssistBot/1.2; (+http://duckduckgo.com/duckassistbot.html)";
+
+/// The User-Agent DuckDuckGo publishes for the crawler that improves its
+/// search index.
+const DUCK_DUCK_UA: &str = "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)";
+
 #[test]
 fn a_claim_that_names_a_known_crawler_verifies_with_its_address() {
     let (_directory, validator) = validator();
@@ -451,4 +459,57 @@ fn a_crawl_of_common_crawl_outside_its_domains_does_not_verify() {
     let result = validator.verify(CCBOT_UA, ip("203.0.113.7"));
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
+}
+
+/// The crawler of DuckDuckGo that fetches the pages of the AI-assisted answers
+/// is verified by the address space the vendor publishes for it.
+///
+/// The vendor publishes a document of its own for the crawler, so a request is
+/// verified against the address space of the crawler its marker names.
+#[test]
+fn the_crawler_of_duckduck_go_is_verified_by_the_address_space_it_publishes() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("duckassistbot", "104.43.54.127/32")
+        .unwrap();
+
+    let result = validator.verify(DUCK_ASSIST_UA, ip("104.43.54.127"));
+    assert!(result.is_verified());
+    assert_eq!(result.name, "duckassistbot");
+    assert_eq!(result.vendor, "DuckDuckGo");
+}
+
+/// An address outside the published address space is not a crawler of
+/// DuckDuckGo, even when the request names one.
+#[test]
+fn a_duck_assist_claim_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("duckassistbot", "104.43.54.127/32")
+        .unwrap();
+
+    let result = validator.verify(DUCK_ASSIST_UA, ip("203.0.113.7"));
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
+}
+
+/// The two crawlers of DuckDuckGo are told apart by their markers.
+///
+/// The vendor publishes a document for each of the two crawlers, and the
+/// marker of one never claims the request of the other.
+#[test]
+fn the_two_crawlers_of_duckduck_go_are_told_apart_by_their_markers() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_prefix("duckassistbot", "104.43.54.127/32")
+        .unwrap();
+    validator
+        .seed_prefix("duckduckbot", "104.43.54.127/32")
+        .unwrap();
+
+    let assist = validator.verify(DUCK_ASSIST_UA, ip("104.43.54.127"));
+    assert_eq!(assist.name, "duckassistbot");
+
+    let search = validator.verify(DUCK_DUCK_UA, ip("104.43.54.127"));
+    assert_eq!(search.name, "duckduckbot");
 }
