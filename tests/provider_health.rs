@@ -21,6 +21,7 @@
 mod common;
 
 use std::collections::BTreeMap;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
@@ -418,11 +419,14 @@ async fn the_published_lists_are_read() {
 
 /// Checks every source that is the reverse DNS of a vendor.
 ///
-/// The domains of the definition are resolved in the forward direction, which
-/// is the confirmation the crate needs to answer for a reverse record.
+/// A crawler that states the sample it was confirmed with is judged by that
+/// sample: its reverse name has to resolve under one of the crawler's domains
+/// and has to resolve forward back to the sample — the two conditions the
+/// crate needs to answer for a reverse record. A crawler that states no sample
+/// is judged by its domains, which are resolved in the forward direction.
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "the endpoints of the vendors are on the public internet"]
-async fn the_domains_of_the_crawlers_resolve() {
+async fn the_reverse_dns_of_the_crawlers_is_healthy() {
     let mut tasks = tokio::task::JoinSet::new();
     for bot in registry() {
         if !Sources::of(&bot).contains(&Source::Dns) {
@@ -430,8 +434,12 @@ async fn the_domains_of_the_crawlers_resolve() {
         }
         let name = bot.name.clone();
         let domains = bot.domains.clone();
+        let sample = bot.sample;
         tasks.spawn(async move {
-            let failure = check_domains(&domains).await;
+            let failure = match sample {
+                Some(sample) => check_sample(sample, &domains).await,
+                None => check_domains(&domains).await,
+            };
             (name, failure)
         });
     }
@@ -457,21 +465,93 @@ async fn the_domains_of_the_crawlers_resolve() {
     verdict(Source::Dns);
 }
 
+/// Checks the sample of a crawler: the reverse name of the sample has to
+/// resolve under one of the crawler's domains and has to resolve forward back
+/// to the sample.
+async fn check_sample(sample: IpAddr, domains: &[String]) -> Option<String> {
+    let reverse = match within(move || reverse_name(sample)).await {
+        Lookup::Done(Ok(reverse)) => reverse,
+        Lookup::Done(Err(error)) => return Some(format!("{sample} {error}")),
+        Lookup::Failed(error) => return Some(format!("{sample}: {error}")),
+        Lookup::TimedOut => {
+            return Some(format!(
+                "{sample} did not resolve within {}s",
+                RESOLVE_TIMEOUT.as_secs()
+            ));
+        }
+    };
+    if !knownbots::match_domain(&reverse, domains) {
+        return Some(format!(
+            "the reverse name {reverse} of {sample} is under none of the domains of the crawler"
+        ));
+    }
+    let host = reverse.clone();
+    match within(move || confirms(&host, sample)).await {
+        Lookup::Done(Ok(true)) => None,
+        Lookup::Done(Ok(false)) => Some(format!(
+            "the reverse name {reverse} no longer resolves to {sample}"
+        )),
+        Lookup::Done(Err(error)) | Lookup::Failed(error) => {
+            Some(format!("the reverse name {reverse}: {error}"))
+        }
+        Lookup::TimedOut => Some(format!(
+            "the reverse name {reverse} did not resolve within {}s",
+            RESOLVE_TIMEOUT.as_secs()
+        )),
+    }
+}
+
+/// The outcome of a lookup under the bound of the resolution.
+enum Lookup<T> {
+    /// The lookup answered with a value.
+    Done(T),
+    /// The lookup failed.
+    Failed(String),
+    /// The bound passed before the lookup answered.
+    TimedOut,
+}
+
+/// Runs a lookup under the bound of the resolution.
+///
+/// The bound stops the check from waiting for the lookup, not the lookup
+/// itself: the blocking call keeps running on the thread of the runtime.
+async fn within<T: Send + 'static>(lookup: impl FnOnce() -> T + Send + 'static) -> Lookup<T> {
+    let task = tokio::task::spawn_blocking(lookup);
+    match tokio::time::timeout(RESOLVE_TIMEOUT, task).await {
+        Ok(Ok(value)) => Lookup::Done(value),
+        Ok(Err(error)) => Lookup::Failed(error.to_string()),
+        Err(_) => Lookup::TimedOut,
+    }
+}
+
+/// The reverse name of an address, without the trailing dot.
+///
+/// The lookup of an address that carries no reverse record is an error, the
+/// way the crate's own worker reads it.
+fn reverse_name(address: IpAddr) -> Result<String, String> {
+    match dns_lookup::lookup_addr(&address) {
+        Ok(name) => Ok(name.trim_end_matches('.').to_string()),
+        Err(error) => Err(format!("has no reverse name: {error}")),
+    }
+}
+
+/// Whether a hostname resolves to an address.
+fn confirms(host: &str, address: IpAddr) -> Result<bool, String> {
+    dns_lookup::lookup_host(host)
+        .map(|hosts| hosts.contains(&address))
+        .map_err(|error| error.to_string())
+}
+
 /// Resolves every domain of a source and names the ones that do not resolve.
 async fn check_domains(domains: &[String]) -> Option<String> {
     let mut failures = Vec::new();
     for domain in domains {
         let name = domain.clone();
-        let outcome = tokio::time::timeout(
-            RESOLVE_TIMEOUT,
-            tokio::task::spawn_blocking(move || resolves(&name)),
-        )
-        .await;
-        match outcome {
-            Ok(Ok(true)) => {}
-            Ok(Ok(false)) => failures.push(format!("{domain} does not resolve")),
-            Ok(Err(error)) => failures.push(format!("{domain}: {error}")),
-            Err(_) => failures.push(format!(
+        match within(move || resolves(&name)).await {
+            Lookup::Done(true) => {}
+            Lookup::Done(false) => failures.push(format!("{domain} does not resolve")),
+            Lookup::Failed(error) => failures.push(format!("{domain}: {error}")),
+            Lookup::TimedOut => failures.push(format!(
                 "{domain} did not resolve within {}s",
                 RESOLVE_TIMEOUT.as_secs()
             )),

@@ -57,6 +57,21 @@ holds two rows, and each of them carries its own state.
 | `prefixes` | The number of prefixes the crawler holds after the check. Every row of a crawler carries the same number. |
 | `detail` | The reason of the outcome. |
 
+## The judgement of a reverse DNS
+
+A crawler whose source is the reverse DNS of its vendor is judged by the
+address its definition states as its `sample:`, when it states one. The reverse
+name of the sample has to resolve, has to be under one of the crawler's
+`domains:`, and has to resolve forward back to the sample — the three
+conditions the crate needs to answer for a reverse record. A crawler that
+states no sample is judged by its domains, which are resolved in the forward
+direction.
+
+The sample is the stronger judgement. The zones of the crawlers that hold only
+reverse names carry no address records of their own, so a domain that does not
+resolve forward says nothing about the reverse names it holds. A sample that
+stops confirming is a sample the definition has to replace.
+
 ## The issue
 
 The script renders the table of the report and keeps an issue labelled

@@ -7,3 +7,4 @@ ua: "PetalBot"
 rdns: true
 domains:
   - "petalsearch.com"
+sample: "114.119.128.10"

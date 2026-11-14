@@ -6,4 +6,3 @@ ua: "Bytespider"
 rdns: true
 domains:
   - "bytedance.com"
-  - "byteimg.com"
