@@ -291,6 +291,30 @@ async fn a_redirect_is_followed() {
     assert_eq!(prefix_count(&validator), 1);
 }
 
+/// The page of Amazon carries the document of the list, and the list of the
+/// search crawler names its prefixes under another key than the list of the
+/// training crawler.
+#[tokio::test]
+async fn the_page_of_the_search_crawler_of_amazon_is_read() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "text/html")
+                .set_body_string(r#"<html><script>{"prefixes":[{"ip_prefix":"3.82.67.224/32"}]}</script></html>"#),
+        )
+        .mount(&server)
+        .await;
+
+    let (_directory, validator) = validator_for(&server, "amazon").await;
+    assert!(validator.refresh_bot("testbot").await.is_none());
+    assert_eq!(prefix_count(&validator), 1);
+
+    let result = validator.verify("TestBot/1.0", "3.82.67.224".parse::<IpAddr>().unwrap());
+    assert!(result.is_verified(), "{result:?}");
+}
+
 /// A list that lists its addresses line by line is read as well.
 #[tokio::test]
 async fn a_list_of_lines_is_read() {

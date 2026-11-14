@@ -1,0 +1,9 @@
+# Amazon search crawler
+# https://developer.amazon.com/amazonbot
+kind: AIAssist
+name: amzn-searchbot
+vendor: "Amazon"
+ua: "Amzn-SearchBot"
+parser: amazon
+urls:
+  - "https://developer.amazon.com/amazonbot/searchbot-ip-addresses"

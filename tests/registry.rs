@@ -42,7 +42,7 @@ fn source_files(directory: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 57, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 59, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -57,7 +57,7 @@ fn the_embedded_definitions_load() {
 fn the_counts_of_the_registry_are_the_counts_the_health_check_names() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     let count = |source: Source| bots.iter().filter(|bot| Source::of(bot) == source).count();
-    assert_eq!(count(Source::List), 38, "the registry holds other lists");
+    assert_eq!(count(Source::List), 40, "the registry holds other lists");
     assert_eq!(
         count(Source::Dns),
         18,
@@ -193,6 +193,8 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("claude-searchbot"), "Anthropic");
     assert_eq!(vendor_for("claude-user"), "Anthropic");
     assert_eq!(vendor_for("oai-adsbot"), "OpenAI");
+    assert_eq!(vendor_for("amzn-searchbot"), "Amazon");
+    assert_eq!(vendor_for("amzn-user"), "Amazon");
     assert_eq!(vendor_for("mistralai-user"), "Mistral");
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
@@ -345,6 +347,56 @@ fn the_definitions_of_the_crawlers_of_mistral_hold_their_fields() {
     assert!(
         user.custom.is_empty(),
         "the crawler states no prefix of its own"
+    );
+}
+
+/// The definitions of the crawlers of Amazon hold the fields the vendor
+/// publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's.
+#[test]
+fn the_definitions_of_the_crawlers_of_amazon_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let searchbot = bots
+        .iter()
+        .find(|bot| bot.name == "amzn-searchbot")
+        .expect("amzn-searchbot in the registry");
+    assert_eq!(searchbot.kind, BotKind::AIAssist);
+    assert_eq!(searchbot.vendor, "Amazon");
+    assert_eq!(searchbot.ua, "Amzn-SearchBot");
+    assert_eq!(searchbot.parser, "amazon");
+    assert_eq!(
+        searchbot.urls,
+        ["https://developer.amazon.com/amazonbot/searchbot-ip-addresses"]
+    );
+    assert!(
+        !searchbot.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        searchbot.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+
+    let user = bots
+        .iter()
+        .find(|bot| bot.name == "amzn-user")
+        .expect("amzn-user in the registry");
+    assert_eq!(user.kind, BotKind::AIAssist);
+    assert_eq!(user.vendor, "Amazon");
+    assert_eq!(user.ua, "Amzn-User");
+    assert_eq!(user.parser, "amazon");
+    assert_eq!(
+        user.urls,
+        ["https://developer.amazon.com/amazonbot/live-ip-addresses"]
+    );
+    assert!(!user.rdns, "the crawler is verified by its published list");
+    assert!(
+        user.domains.is_empty(),
+        "the crawler has no reverse DNS source"
     );
 }
 

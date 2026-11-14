@@ -37,9 +37,6 @@ pub fn parse(parser: &str, body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
 }
 
 /// Reads a document that holds a list of entries under `list_key`.
-///
-/// Every entry is read on its own: an entry that holds no usable prefix is
-/// skipped, the other entries of the document still count.
 fn parse_prefixes(body: &[u8], list_key: &str, keys: &[&str]) -> Result<Vec<IpNet>, ParseError> {
     let document: Value = serde_json::from_slice(body).map_err(|error| {
         ParseError::NotADocument(format!("the body is not a json document: {error}"))
@@ -50,6 +47,14 @@ fn parse_prefixes(body: &[u8], list_key: &str, keys: &[&str]) -> Result<Vec<IpNe
         .ok_or_else(|| {
             ParseError::UnexpectedShape(format!("the document holds no `{list_key}` list"))
         })?;
+    Ok(prefixes_of_entries(entries, keys))
+}
+
+/// Reads the prefixes of the entries of a list.
+///
+/// Every entry is read on its own: an entry that holds no usable prefix is
+/// skipped, the other entries of the document still count.
+fn prefixes_of_entries(entries: &[Value], keys: &[&str]) -> Vec<IpNet> {
     let mut prefixes = Vec::new();
     for entry in entries {
         for key in keys {
@@ -58,7 +63,7 @@ fn parse_prefixes(body: &[u8], list_key: &str, keys: &[&str]) -> Result<Vec<IpNe
             }
         }
     }
-    Ok(prefixes)
+    prefixes
 }
 
 /// Reads the list of the addresses of the Ahrefs crawler.
@@ -85,6 +90,10 @@ fn parse_ahrefs(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
 ///
 /// Amazon publishes a page that carries a json document. The document is
 /// preferred; a page that lists the addresses as literals is the fallback.
+///
+/// The pages of the vendor do not all name their prefixes the same way: the
+/// list of the search crawler carries them under `ip_prefix`, the list of the
+/// user crawler under `ipv4Prefix`.
 fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
     let text = String::from_utf8_lossy(body);
 
@@ -97,12 +106,10 @@ fn parse_amazon(body: &[u8]) -> Result<Vec<IpNet>, ParseError> {
         let Some(entries) = document.get("prefixes").and_then(Value::as_array) else {
             continue;
         };
-        let mut prefixes = Vec::new();
-        for entry in entries {
-            if let Some(value) = entry.get("ipv4Prefix").and_then(Value::as_str) {
-                push_addr_or_cidr(&mut prefixes, value);
-            }
-        }
+        let prefixes = prefixes_of_entries(
+            entries,
+            &["ipv4Prefix", "ip_prefix", "ipv6Prefix", "ipv6_prefix"],
+        );
         if prefixes.is_empty() {
             return Err(ParseError::UnexpectedShape(
                 "the `prefixes` list holds no usable prefix".to_string(),
@@ -327,6 +334,27 @@ mod tests {
             br#"<html><script>{"prefixes":[{"ipv4Prefix":"3.81.245.0/24"}]}</script></html>"#;
         let nets = parse("amazon", body).unwrap();
         assert_eq!(nets.len(), 1);
+    }
+
+    /// The list of the search crawler of Amazon carries its prefixes under
+    /// another key than the list of the training crawler.
+    #[test]
+    fn amazon_parser_reads_the_prefixes_of_the_search_crawler() {
+        let body =
+            br#"<html><script>{"prefixes":[{"ip_prefix":"3.82.67.224/32"}]}</script></html>"#;
+        let nets = parse("amazon", body).unwrap();
+        assert_eq!(nets.len(), 1);
+        assert_eq!(nets[0], "3.82.67.224/32".parse::<IpNet>().unwrap());
+    }
+
+    /// The list of the user crawler of Amazon carries its prefixes under
+    /// another key as well.
+    #[test]
+    fn amazon_parser_reads_the_prefixes_of_the_user_crawler() {
+        let body = br#"<html><script>{"prefixes":[{"ipv6_prefix":"2600::/32"}]}</script></html>"#;
+        let nets = parse("amazon", body).unwrap();
+        assert_eq!(nets.len(), 1);
+        assert_eq!(nets[0], "2600::/32".parse::<IpNet>().unwrap());
     }
 
     #[test]

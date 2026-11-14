@@ -1,0 +1,9 @@
+# Amazon user crawler
+# https://developer.amazon.com/amazonbot
+kind: AIAssist
+name: amzn-user
+vendor: "Amazon"
+ua: "Amzn-User"
+parser: amazon
+urls:
+  - "https://developer.amazon.com/amazonbot/live-ip-addresses"
