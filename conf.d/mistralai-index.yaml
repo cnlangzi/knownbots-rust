@@ -1,4 +1,4 @@
-# MistralAI-Index - Mistral search crawler for Vibe
+# MistralAI-Index - Mistral AI search index crawler
 # https://docs.mistral.ai/robots
 # JSON format: https://mistral.ai/mistralai-index-ips.json
 kind: AIAssist
