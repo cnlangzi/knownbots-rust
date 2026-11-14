@@ -1,0 +1,10 @@
+# MistralAI-Index - Mistral AI search index crawler
+# https://docs.mistral.ai/robots
+# JSON format: https://mistral.ai/mistralai-index-ips.json
+kind: AIAssist
+name: mistralai-index
+vendor: "Mistral"
+parser: google
+ua: "MistralAI-Index"
+urls:
+  - "https://mistral.ai/mistralai-index-ips.json"

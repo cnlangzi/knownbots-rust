@@ -182,6 +182,14 @@ meta-externalagent:
   ua:
     - "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)"
     - "meta-externalagent/1.1"
+mistralai-index:
+  url: "https://docs.mistral.ai/robots"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)"
+mistralai-user:
+  url: "https://docs.mistral.ai/robots"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-User/1.0; +https://docs.mistral.ai/robots)"
 mj12bot:
   url: "https://mj12bot.com/"
   ua:
