@@ -185,6 +185,42 @@ fn the_prefixes_of_the_definition_verify_the_request() {
     assert_eq!(result.name, "facebookexternalhit");
 }
 
+/// The crawler of ByteDance is verified by the address space the vendor
+/// publishes.
+///
+/// The vendor publishes the networks of the crawler and keeps the reverse names
+/// of its addresses, but the names never confirm forward — the crate cannot
+/// verify the crawler by them, so the request is verified by the networks
+/// instead.
+#[test]
+fn the_crawler_of_bytedance_is_verified_by_the_address_space_it_publishes() {
+    let (_directory, validator) = validator();
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; Bytespider; https://zhanzhang.toutiao.com/)",
+        ip("110.249.201.10"),
+    );
+    assert!(result.is_verified());
+    assert_eq!(result.name, "bytespider");
+    assert_eq!(result.vendor, "ByteDance");
+}
+
+/// An address outside the published address space is not the crawler, even when
+/// the request names it.
+///
+/// The crawler carries no reverse DNS, so the request fails closed at once: no
+/// reverse lookup is queued for it, and the answer is `Failed` and never
+/// `Pending`.
+#[test]
+fn a_bytespider_claim_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; Bytespider; https://zhanzhang.toutiao.com/)",
+        ip("203.0.113.7"),
+    );
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
+}
+
 /// The marker of the crawler of OpenAI sits inside the marker of the crawler of
 /// Google, so the longest marker has to claim the request.
 #[test]

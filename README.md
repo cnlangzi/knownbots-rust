@@ -273,7 +273,7 @@ is compiled into the crate.
 | applebot | Apple | SearchEngine | Applebot | list |
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |
 | bingbot | Microsoft | SearchEngine | bingbot | list |
-| bytespider | ByteDance | AITraining | Bytespider | dns |
+| bytespider | ByteDance | AITraining | Bytespider | static |
 | ccbot | CommonCrawl | AITraining | CCBot | list+dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claude-searchbot | Anthropic | AIAssist | Claude-SearchBot | list |
@@ -381,6 +381,7 @@ rdns: true
 domains:
   - "baidu.com"
   - "baidu.jp"
+sample: "220.181.108.94"
 ```
 
 The optional `sample` is the address the definition was confirmed with: its

@@ -1,8 +1,24 @@
 # Bytespider - ByteDance AI crawler
+# The address space is the ten networks ByteDance publishes for the crawler:
+# https://zhanzhang.toutiao.com/page/outer/docs/26899/
+# The list is a snapshot of that page — nothing re-reads it, so a change of the
+# networks is picked up by hand.
+# The reverse names of the crawler resolve under bytedance.com, but the zone
+# crawl.bytedance.com holds no address records of its own: the names never
+# confirm forward, so the crawler is not verified by them.
 kind: AITraining
 name: bytespider
 vendor: "ByteDance"
 ua: "Bytespider"
-rdns: true
-domains:
-  - "bytedance.com"
+custom:
+  - "110.249.201.0/24"
+  - "110.249.202.0/24"
+  - "111.225.148.0/24"
+  - "111.225.149.0/24"
+  - "220.243.135.0/24"
+  - "220.243.136.0/24"
+  - "220.243.188.0/24"
+  - "220.243.189.0/24"
+  - "60.8.123.0/24"
+  - "60.8.151.0/24"
+rdns: false

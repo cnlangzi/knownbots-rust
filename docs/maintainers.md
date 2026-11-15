@@ -72,6 +72,21 @@ reverse names carry no address records of their own, so a domain that does not
 resolve forward says nothing about the reverse names it holds. A sample that
 stops confirming is a sample the definition has to replace.
 
+A crawler whose vendor publishes reverse names that never confirm forward is not
+carried by the reverse DNS of its vendor: the registry would carry a name that
+matches traffic the crate can never verify. Such a crawler is carried by the
+address space its vendor publishes — as a `static` crawler — or not at all.
+
+## The judgement of a static crawler
+
+A crawler whose source is the prefixes its own definition states has no
+upstream for the check to read, so its row is `skipped`. Its address space is
+what the definition states, and nothing notices when the vendor changes it: a
+network the vendor drops stays in the definition, and a network the vendor adds
+is missing from it. A request from an address outside the stated networks fails
+closed, as it does for every crawler whose address space the crate does not
+cover.
+
 ## The issue
 
 The script renders the table of the report and keeps an issue labelled
