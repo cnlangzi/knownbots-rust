@@ -10,3 +10,4 @@ domains:
   - "yandex.net"
   - "yandex.ru"
 rdns: true
+sample: "87.250.224.216"

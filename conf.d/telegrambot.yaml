@@ -6,3 +6,4 @@ ua: "TelegramBot"
 rdns: true
 domains:
   - "telegram.org"
+sample: "149.154.161.215"

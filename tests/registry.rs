@@ -835,3 +835,74 @@ fn the_definitions_of_the_crawlers_of_the_reverse_dns_hold_their_fields() {
         );
     }
 }
+
+/// The definition of the crawler of Common Crawl states the sample it was
+/// confirmed with.
+///
+/// The vendor publishes an address space for the crawler and keeps the reverse
+/// names of its addresses, so the definition names both of them. The sample is
+/// the address a reverse name confirmed forward to, and the health check
+/// judges the reverse DNS of the crawler by it.
+#[test]
+fn the_definition_of_the_crawler_of_common_crawl_states_the_sample_it_was_confirmed_with() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let ccbot = bots
+        .iter()
+        .find(|bot| bot.name == "ccbot")
+        .expect("ccbot in the registry");
+    assert_eq!(ccbot.kind, BotKind::AITraining);
+    assert_eq!(ccbot.vendor, "CommonCrawl");
+    assert_eq!(ccbot.ua, "CCBot");
+    assert!(
+        ccbot.rdns,
+        "the crawler is verified by the reverse DNS of its vendor"
+    );
+    assert_eq!(ccbot.domains, ["commoncrawl.org"]);
+    assert_eq!(ccbot.sample, Some("3.41.188.33".parse::<IpAddr>().unwrap()));
+}
+
+/// The crawlers whose addresses carry no confirmed address state no sample.
+///
+/// A sample is a confirmed address: the reverse name of the address has to be
+/// under one of the domains of the crawler and has to resolve forward back to
+/// the address. No address of these crawlers is one, so their definitions
+/// state no sample, and the health check keeps judging them by their domains.
+///
+/// The reason differs per crawler, and it is the reason the addresses of the
+/// crawler were probed for:
+/// - the reverse names of the addresses of the crawler of Discord, of the two
+///   crawlers of Perplexity and of the crawler of Slack resolve in the zone
+///   of a hosting provider, not in a zone of the vendor;
+/// - the reverse names of the addresses of the crawler of Twitter resolve
+///   under a domain of the vendor that the definition does not name;
+/// - no record of the crawler of Reddit and of the crawler of WhatsApp was
+///   found, so no address of them was probed.
+#[test]
+fn the_crawlers_without_a_confirmed_address_state_no_sample() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    for name in [
+        "discordbot",
+        "perplexitybot",
+        "perplexity-user",
+        "redditbot",
+        "slackbot",
+        "twitterbot",
+        "whatsapp",
+    ] {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(bot.sample, None, "the crawler {name} states no sample");
+        assert!(
+            bot.rdns,
+            "the crawler {name} is verified by the reverse DNS of its vendor"
+        );
+        assert!(
+            !bot.domains.is_empty(),
+            "the crawler {name} names the domains of its vendor"
+        );
+    }
+}

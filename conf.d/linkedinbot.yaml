@@ -7,3 +7,4 @@ ua: "LinkedInBot"
 rdns: true
 domains:
   - "linkedin.com"
+sample: "108.174.2.206"
