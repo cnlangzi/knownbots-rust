@@ -1,0 +1,11 @@
+# SEOkicks - SEOkicks backlink crawler
+# Official UA: SEOkicks
+# https://www.seokicks.de/robot.html
+kind: SEO
+name: seokicks
+vendor: "SEOkicks"
+ua: "SEOkicks"
+rdns: true
+domains:
+  - "seokicks.de"
+sample: "65.21.226.48"

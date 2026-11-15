@@ -61,6 +61,10 @@ bingbot:
   url: "https://www.bing.com/webmasters/help/how-to-verify-bingbot-3905dc26"
   ua:
     - "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)"
+bingpreview:
+  url: "https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0"
+  ua:
+    - "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b"
 bytespider:
   url: "https://crawler.bytedance.com/"
   ua:
@@ -70,6 +74,10 @@ ccbot:
   ua:
     - "CCBot/2.0 (https://commoncrawl.org/faq/)"
     - "CCBot/1.0 (+https://commoncrawl.org/bot.html)"
+censysinspect:
+  url: "https://docs.censys.com/docs/opt-out-of-data-collection"
+  ua:
+    - "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)"
 chatgpt-user:
   url: "https://developers.openai.com/api/docs/bots"
   ua:
@@ -90,6 +98,10 @@ cloudflare-healthchecks:
   url: "https://developers.cloudflare.com/health-checks/how-to/zone-lockdown/"
   ua:
     - "Mozilla/5.0 (compatible;Cloudflare-Healthchecks/1.0;+https://www.cloudflare.com/; healthcheck-id: XXX)"
+dataforseobot:
+  url: "https://dataforseo.com/dataforseo-bot"
+  ua:
+    - "Mozilla/5.0 (compatible; DataForSeoBot; +https://dataforseo.com/dataforseo-bot)"
 discordbot:
   url: "https://support.discord.com/hc/en-us/articles/42500550752919-About-Discord-Link-Previews-and-the-Discordbot"
   ua:
@@ -180,6 +192,10 @@ gptbot:
   url: "https://developers.openai.com/api/docs/bots"
   ua:
     - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.4; +https://openai.com/gptbot"
+hetrixtools:
+  url: "https://hetrixtools.com/uptime-monitor-bot/"
+  ua:
+    - "HetrixTools Uptime Monitoring Bot. https://hetrix.tools/uptime-monitoring-bot.html"
 linkedinbot:
   url: "https://www.linkedin.com/robots.txt"
   ua:
@@ -194,6 +210,16 @@ meta-externalagent:
   ua:
     - "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)"
     - "meta-externalagent/1.1"
+meta-externalfetcher:
+  url: "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/"
+  ua:
+    - "meta-externalfetcher/1.1 (+/documentation/sharing/webmasters/web-crawlers)"
+    - "meta-externalfetcher/1.1"
+meta-webindexer:
+  url: "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/"
+  ua:
+    - "meta-webindexer/1.1 (+/documentation/sharing/webmasters/web-crawlers)"
+    - "meta-webindexer/1.1"
 mistralai-index:
   url: "https://docs.mistral.ai/robots"
   ua:
@@ -276,10 +302,22 @@ semrushbot-swa:
   url: "https://www.semrush.com/bot.html"
   ua:
     - "SemrushBot-SWA"
+seokicks:
+  url: "https://www.seokicks.de/robot.html"
+  ua:
+    - "Mozilla/5.0 (compatible; SEOkicks; +https://www.seokicks.de/robot.html)"
+seznambot:
+  url: "https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/"
+  ua:
+    - "Mozilla/5.0 (compatible; SeznamBot/4.0; +https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/)"
 siteauditbot:
   url: "https://www.semrush.com/bot.html"
   ua:
     - "SiteAuditBot"
+sitebulb:
+  url: "https://support.sitebulb.com/en/articles/9993764-sitebulb-s-user-agent"
+  ua:
+    - "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/W.X.Y.Z Safari/537.36 (compatible; Sitebulb/1.1; +https://sitebulb.com)"
 slackbot:
   url: "https://api.slack.com/robots"
   ua:
@@ -317,6 +355,11 @@ yandexbot:
   ua:
     - "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
     - "Mozilla/5.0 (compatible; YandexBot/3.0; MirrorDetector; +http://yandex.com/bots)"
+yeti:
+  url: "https://searchadvisor.naver.com/guide/seo-basic-firewall"
+  ua:
+    - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko; compatible; Yeti/1.1; +https://naver.me/spd) Chrome/W.X.Y.Z Safari/537.36"
+    - "Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)"
 youbot:
   url: "https://you.com/docs/youbot"
   ua:

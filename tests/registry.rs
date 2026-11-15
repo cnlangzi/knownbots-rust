@@ -89,7 +89,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 70, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 80, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -819,4 +819,126 @@ fn the_background_work_needs_no_runtime_of_the_host() {
 
     validator.shutdown();
     drop(validator);
+}
+
+/// The definitions of the crawlers that are known only by their reverse DNS
+/// hold the fields the vendor publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's. Each of these crawlers is
+/// verified by the reverse DNS of its vendor, so the definition names the
+/// domain of the vendor and the address the crawler was confirmed with.
+#[test]
+fn the_definitions_of_the_crawlers_of_the_reverse_dns_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    for (name, kind, vendor, marker, domains, sample) in [
+        (
+            "bingpreview",
+            BotKind::SearchEngine,
+            "Microsoft",
+            "BingPreview",
+            &["search.msn.com"][..],
+            "40.77.167.1",
+        ),
+        (
+            "censysinspect",
+            BotKind::Security,
+            "Censys",
+            "CensysInspect",
+            &["censys-scanner.com"][..],
+            "162.142.125.1",
+        ),
+        (
+            "dataforseobot",
+            BotKind::SEO,
+            "DataForSEO",
+            "DataForSeoBot",
+            &["dataforseo.com"][..],
+            "136.243.228.176",
+        ),
+        (
+            "hetrixtools",
+            BotKind::Monitor,
+            "HetrixTools",
+            "HetrixTools",
+            &["hetrixtools.com"][..],
+            "52.207.41.187",
+        ),
+        (
+            "meta-externalfetcher",
+            BotKind::AIAssist,
+            "Meta",
+            "meta-externalfetcher",
+            &["fbsv.net", "tfbnw.net", "facebook.com"][..],
+            "66.220.144.40",
+        ),
+        (
+            "meta-webindexer",
+            BotKind::AIAssist,
+            "Meta",
+            "meta-webindexer",
+            &["fbsv.net", "tfbnw.net", "facebook.com"][..],
+            "66.220.144.40",
+        ),
+        (
+            "seznambot",
+            BotKind::SearchEngine,
+            "Seznam",
+            "SeznamBot",
+            &["seznam.cz"][..],
+            "77.75.77.95",
+        ),
+        (
+            "seokicks",
+            BotKind::SEO,
+            "SEOkicks",
+            "SEOkicks",
+            &["seokicks.de"][..],
+            "65.21.226.48",
+        ),
+        (
+            "sitebulb",
+            BotKind::SEO,
+            "Sitebulb",
+            "Sitebulb",
+            &["sitebulb.com"][..],
+            "78.40.58.130",
+        ),
+        (
+            "yeti",
+            BotKind::SearchEngine,
+            "Naver",
+            "Yeti",
+            &["naver.com"][..],
+            "125.209.235.169",
+        ),
+    ] {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(bot.kind, kind);
+        assert_eq!(bot.vendor, vendor);
+        assert_eq!(bot.ua, marker);
+        assert!(
+            bot.urls.is_empty(),
+            "the vendor publishes no address space for {name}"
+        );
+        assert!(
+            bot.rdns,
+            "the crawler {name} is verified by the reverse DNS of its vendor"
+        );
+        assert_eq!(bot.domains, domains);
+        assert!(
+            bot.custom.is_empty(),
+            "the crawler {name} states no prefix of its own"
+        );
+        assert_eq!(
+            bot.sample,
+            Some(sample.parse().expect("an address")),
+            "the crawler {name} states no sample"
+        );
+    }
 }

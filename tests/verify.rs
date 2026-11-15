@@ -677,3 +677,95 @@ fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
 }
+
+/// The crawlers that are known only by their reverse DNS are verified by the
+/// reverse names of their vendors.
+///
+/// Each of them names a domain the vendor owns, and an address whose reverse
+/// name ends in that domain is the address of the crawler.
+#[test]
+fn the_crawlers_of_the_reverse_dns_are_verified_by_their_reverse_names() {
+    let (_directory, validator) = validator();
+
+    for (name, marker, address, hostname) in [
+        (
+            "bingpreview",
+            "BingPreview",
+            "40.77.167.1",
+            "msnbot-40-77-167-1.search.msn.com",
+        ),
+        (
+            "censysinspect",
+            "CensysInspect",
+            "162.142.125.1",
+            "1.125.142.162.censys-scanner.com",
+        ),
+        (
+            "dataforseobot",
+            "DataForSeoBot",
+            "136.243.228.176",
+            "crawling-gateway-136-243-228-176.dataforseo.com",
+        ),
+        (
+            "hetrixtools",
+            "HetrixTools",
+            "52.207.41.187",
+            "wk1.hetrixtools.com",
+        ),
+        (
+            "meta-externalfetcher",
+            "meta-externalfetcher",
+            "66.220.144.40",
+            "corpout3.snc1.tfbnw.net",
+        ),
+        (
+            "meta-webindexer",
+            "meta-webindexer",
+            "66.220.144.40",
+            "corpout3.snc1.tfbnw.net",
+        ),
+        (
+            "seznambot",
+            "SeznamBot",
+            "77.75.77.95",
+            "fulltextrobot-77-75-77-95.seznam.cz",
+        ),
+        ("seokicks", "SEOkicks", "65.21.226.48", "cp1.seokicks.de"),
+        (
+            "sitebulb",
+            "Sitebulb",
+            "78.40.58.130",
+            "crawl-78-40-58-130.uk.sitebulb.com",
+        ),
+        (
+            "yeti",
+            "Yeti",
+            "125.209.235.169",
+            "crawl.125-209-235-169.web.naver.com",
+        ),
+    ] {
+        validator.seed_rdns(name, address, hostname).unwrap();
+
+        let ua = format!("Mozilla/5.0 (compatible; {marker}/1.0)");
+        let result = validator.verify(&ua, ip(address));
+        assert!(result.is_verified(), "{name} was not verified");
+        assert_eq!(result.name, name);
+    }
+}
+
+/// A hostname outside the domains of the vendor does not confirm a crawler that
+/// is known only by its reverse DNS, even when the request names one.
+#[test]
+fn a_claim_of_a_crawler_of_the_reverse_dns_from_an_address_outside_the_domains_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("seznambot", "203.0.113.7", "crawler.example.com")
+        .unwrap();
+
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; SeznamBot/4.0; +https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/)",
+        ip("203.0.113.7"),
+    );
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
+}

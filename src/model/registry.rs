@@ -43,10 +43,18 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("bingbot.yaml", include_str!("../../conf.d/bingbot.yaml")),
     (
+        "bingpreview.yaml",
+        include_str!("../../conf.d/bingpreview.yaml"),
+    ),
+    (
         "bytespider.yaml",
         include_str!("../../conf.d/bytespider.yaml"),
     ),
     ("ccbot.yaml", include_str!("../../conf.d/ccbot.yaml")),
+    (
+        "censysinspect.yaml",
+        include_str!("../../conf.d/censysinspect.yaml"),
+    ),
     (
         "chatgpt-user.yaml",
         include_str!("../../conf.d/chatgpt-user.yaml"),
@@ -66,6 +74,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "cloudflare-healthchecks.yaml",
         include_str!("../../conf.d/cloudflare-healthchecks.yaml"),
+    ),
+    (
+        "dataforseobot.yaml",
+        include_str!("../../conf.d/dataforseobot.yaml"),
     ),
     (
         "discordbot.yaml",
@@ -145,6 +157,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("gptbot.yaml", include_str!("../../conf.d/gptbot.yaml")),
     (
+        "hetrixtools.yaml",
+        include_str!("../../conf.d/hetrixtools.yaml"),
+    ),
+    (
         "linkedinbot.yaml",
         include_str!("../../conf.d/linkedinbot.yaml"),
     ),
@@ -155,6 +171,14 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "meta-externalagent.yaml",
         include_str!("../../conf.d/meta-externalagent.yaml"),
+    ),
+    (
+        "meta-externalfetcher.yaml",
+        include_str!("../../conf.d/meta-externalfetcher.yaml"),
+    ),
+    (
+        "meta-webindexer.yaml",
+        include_str!("../../conf.d/meta-webindexer.yaml"),
     ),
     (
         "mistralai-index.yaml",
@@ -225,9 +249,15 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         include_str!("../../conf.d/semrushbot.yaml"),
     ),
     (
+        "seznambot.yaml",
+        include_str!("../../conf.d/seznambot.yaml"),
+    ),
+    ("seokicks.yaml", include_str!("../../conf.d/seokicks.yaml")),
+    (
         "siteauditbot.yaml",
         include_str!("../../conf.d/siteauditbot.yaml"),
     ),
+    ("sitebulb.yaml", include_str!("../../conf.d/sitebulb.yaml")),
     ("slackbot.yaml", include_str!("../../conf.d/slackbot.yaml")),
     ("sogou.yaml", include_str!("../../conf.d/sogou.yaml")),
     (
@@ -251,6 +281,7 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "yandexbot.yaml",
         include_str!("../../conf.d/yandexbot.yaml"),
     ),
+    ("yeti.yaml", include_str!("../../conf.d/yeti.yaml")),
     ("youbot.yaml", include_str!("../../conf.d/youbot.yaml")),
 ];
 

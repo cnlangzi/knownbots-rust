@@ -1,0 +1,11 @@
+# CensysInspect - Censys scanner
+# Official UA: CensysInspect/1.1
+# https://docs.censys.com/docs/opt-out-of-data-collection
+kind: Security
+name: censysinspect
+vendor: "Censys"
+ua: "CensysInspect"
+rdns: true
+domains:
+  - "censys-scanner.com"
+sample: "162.142.125.1"

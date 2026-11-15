@@ -1,0 +1,11 @@
+# BingPreview - Bing page snapshot crawler
+# Official UA: BingPreview/1.0b
+# https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0
+kind: SearchEngine
+name: bingpreview
+vendor: "Microsoft"
+ua: "BingPreview"
+rdns: true
+domains:
+  - "search.msn.com"
+sample: "40.77.167.1"

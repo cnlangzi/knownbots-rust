@@ -1,0 +1,13 @@
+# Meta-ExternalFetcher - Meta crawler that fetches the links a user asks for
+# Official UA: meta-externalfetcher/1.1
+# https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/
+kind: AIAssist
+name: meta-externalfetcher
+vendor: "Meta"
+ua: "meta-externalfetcher"
+rdns: true
+domains:
+  - "fbsv.net"
+  - "tfbnw.net"
+  - "facebook.com"
+sample: "66.220.144.40"
