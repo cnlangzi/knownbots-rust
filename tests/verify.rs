@@ -1,9 +1,13 @@
 //! The verification model: the marker of the request and the address of the
 //! request both have to hold.
 
+#[path = "common/dns.rs"]
+mod dns;
+
 use std::net::IpAddr;
 use std::sync::Arc;
 
+use dns::DNS_CRAWLERS;
 use knownbots::{Validator, ValidatorOptions, VerifyStatus};
 
 /// A validator with an empty cache.
@@ -687,69 +691,23 @@ fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
 fn the_crawlers_of_the_reverse_dns_are_verified_by_their_reverse_names() {
     let (_directory, validator) = validator();
 
-    for (name, marker, address, hostname) in [
-        (
-            "bingpreview",
-            "BingPreview",
-            "40.77.167.1",
-            "msnbot-40-77-167-1.search.msn.com",
-        ),
-        (
-            "censysinspect",
-            "CensysInspect",
-            "162.142.125.1",
-            "1.125.142.162.censys-scanner.com",
-        ),
-        (
-            "dataforseobot",
-            "DataForSeoBot",
-            "136.243.228.176",
-            "crawling-gateway-136-243-228-176.dataforseo.com",
-        ),
-        (
-            "hetrixtools",
-            "HetrixTools",
-            "52.207.41.187",
-            "wk1.hetrixtools.com",
-        ),
-        (
-            "meta-externalfetcher",
-            "meta-externalfetcher",
-            "66.220.144.40",
-            "corpout3.snc1.tfbnw.net",
-        ),
-        (
-            "meta-webindexer",
-            "meta-webindexer",
-            "66.220.144.40",
-            "corpout3.snc1.tfbnw.net",
-        ),
-        (
-            "seznambot",
-            "SeznamBot",
-            "77.75.77.95",
-            "fulltextrobot-77-75-77-95.seznam.cz",
-        ),
-        ("seokicks", "SEOkicks", "65.21.226.48", "cp1.seokicks.de"),
-        (
-            "sitebulb",
-            "Sitebulb",
-            "78.40.58.130",
-            "crawl-78-40-58-130.uk.sitebulb.com",
-        ),
-        (
-            "yeti",
-            "Yeti",
-            "125.209.235.169",
-            "crawl.125-209-235-169.web.naver.com",
-        ),
-    ] {
-        validator.seed_rdns(name, address, hostname).unwrap();
+    for crawler in DNS_CRAWLERS {
+        validator
+            .seed_rdns(crawler.name, crawler.sample, crawler.hostname)
+            .unwrap();
 
-        let ua = format!("Mozilla/5.0 (compatible; {marker}/1.0)");
-        let result = validator.verify(&ua, ip(address));
-        assert!(result.is_verified(), "{name} was not verified");
-        assert_eq!(result.name, name);
+        assert!(
+            crawler.sample_is_under_a_domain(),
+            "the reverse name of the sample of {} is under none of its domains",
+            crawler.name
+        );
+
+        let ua = format!("Mozilla/5.0 (compatible; {}/1.0)", crawler.marker);
+        let result = validator.verify(&ua, ip(crawler.sample));
+        assert!(result.is_verified(), "{} was not verified", crawler.name);
+        assert_eq!(result.name, crawler.name);
+        assert_eq!(result.vendor, crawler.vendor);
+        assert_eq!(result.kind, crawler.kind);
     }
 }
 

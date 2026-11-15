@@ -116,7 +116,6 @@ supplied the token. The line that decides it is quoted in the last column.
 
 | token | vendor | kind | the page of the vendor | the line that decides the kind |
 |---|---|---|---|---|
-| `BingPreview` | Microsoft | SearchEngine | https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0 | "BingPreview generates page snapshots for Bing." |
 | `CensysInspect` | Censys | Security | https://docs.censys.com/docs/opt-out-of-data-collection | "Censys regularly probes every public IP address and website, curate and enrich the resulting data, and make it intelligible to defenders." |
 | `DataForSeoBot` | DataForSEO | SEO | https://dataforseo.com/dataforseo-bot | "DataForSEO Bot is constantly crawling the web to add new links to our backlink database and check links that are already included." |
 | `HetrixTools` | HetrixTools | Monitor | https://hetrixtools.com/uptime-monitor-bot/ | "A HetrixTools user added your website as an uptime monitor. Our bot checks that one address on a schedule, and alerts them when it stops responding" |
@@ -127,17 +126,11 @@ supplied the token. The line that decides it is quoted in the last column.
 | `Sitebulb` | Sitebulb | SEO | https://support.sitebulb.com/en/articles/9993764-sitebulb-s-user-agent | "Sitebulb is a website crawling tool designed to help SEO professionals efficiently audit websites and find opportunities for improvement." |
 | `Yeti` | Naver | SearchEngine | https://searchadvisor.naver.com/guide/seo-basic-firewall | "일반적인 네이버 검색 서비스를 위해 웹 문서를 수집하는 검색로봇은 Yeti라고 불리우며" — the search robot that collects web documents for the Naver search service is called Yeti |
 
-The crawler table of Microsoft renders its content with JavaScript; the same
-article is served as plain text by
-https://www.bing.com/webmasters/api/help/htmlcontent?ArticleId=8c184ec0, and
-the User-Agent the vendor published for that crawler,
-`Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko)
-BingPreview/1.0b`, is documented in the post of the vendor that the table links
-to (https://blogs.bing.com/webmaster/2012/10/26/page-snapshots-in-bing-windows-8-app-to-bring-new-crawl-traffic-to-sites/,
-whose copy is archived at
-https://web.archive.org/web/20231211024110/https://blogs.bing.com/webmaster/2012/10/26/page-snapshots-in-bing-windows-8-app-to-bring-new-crawl-traffic-to-sites/).
-The User-Agent strings the crawler table itself publishes for that crawler carry
-the token `bingbot`, which the registry holds under `bingbot`.
+The vendors of `SeznamBot` and of `Yeti` publish an address space of their own
+— https://search.seznam.cz/ipranges/seznambot.json and
+https://searchadvisor.naver.com/doc/naverbot.json — and the definitions of
+the two crawlers name the reverse DNS of their vendors only; a definition that
+carries the list would state two sources, where the registry states one.
 
 ### The tokens the registry does not carry
 
@@ -148,6 +141,7 @@ that was searched.
 | token | vendor | the condition it failed | the evidence |
 |---|---|---|---|
 | `FacebookBot` | Meta | no page of the vendor names the token | the crawler page https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/ names `facebookexternalhit`, `meta-webindexer`, `meta-externalads`, `meta-externalagent` and `meta-externalfetcher`, and the older page https://developers.facebook.com/docs/sharing/bot/ redirects to it; neither names `FacebookBot`. The addresses of the crawlers of Meta carry the reverse name `corpout3.snc1.tfbnw.net` for `66.220.144.40`, which resolves forward to `66.220.144.40`; no address of a `FacebookBot` was found |
+| `BingPreview` | Microsoft | no User-Agent the vendor publishes carries the token | the crawler table of the vendor (https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0, served as plain text by https://www.bing.com/webmasters/api/help/htmlcontent?ArticleId=8c184ec0) names the crawler "BingPreview" — "BingPreview generates page snapshots for Bing." — but the User-Agent strings it publishes for that crawler carry the token `bingbot`, which the registry holds under `bingbot`; the User-Agent that carried the token was "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b", published by the post of the vendor that the table links to (https://blogs.bing.com/webmaster/2012/10/26/page-snapshots-in-bing-windows-8-app-to-bring-new-crawl-traffic-to-sites/, whose copy is archived at https://web.archive.org/web/20231211024110/https://blogs.bing.com/webmaster/2012/10/26/page-snapshots-in-bing-windows-8-app-to-bring-new-crawl-traffic-to-sites/), and that post is no longer published. The DNS side holds: the address `40.77.167.1` carries the reverse name `msnbot-40-77-167-1.search.msn.com`, which resolves forward to `40.77.167.1` |
 | `DotBot` | Moz | no reverse name ends in a domain of the vendor | the page https://moz.com/help/moz-procedures/crawlers/dotbot names the crawler ("Dotbot is Moz's web crawler, it gathers web data for the Moz Link Index"), but the address `216.244.66.237` of the crawler carries the reverse name `216-244-66-237.reverse.wowrack.com`, which carries no address record and does not forward-confirm |
 | `Qwantify` | Qwant | no page of the vendor publishes the token | the crawler page of the vendor (https://help.qwant.com/hc/en-us/articles/51146433634833) names the crawler "QwantBot" and publishes the User-Agents "Mozilla/5.0 (compatible; Qwantbot/1.0_12345; +https://help.qwant.com/bot/)" and "Mozilla/5.0 (compatible; Qwantbot-news/2.0; +https://help.qwant.com/bot/)"; the token survives only on the legal page https://about.qwant.com/en/legal/classement/, which calls the indexing robots of the "Qwantify" family. The reverse name of `194.187.171.99` is `qwantbot-99-171-187-194.qwant.com`, and the forward lookup answers a different address on every resolver (104.16.251.55, 128.242.245.29, 199.59.149.210), so it does not forward-confirm |
 | `360Spider` | Qihoo 360 | no reverse name ends in a domain of the vendor | the page http://www.so.com/help/help_3_2.html names the token ("网页搜索 360Spider - 图片搜索 360Spider-Image - 视频搜索 360Spider-Video") and http://www.so.com/help/spider_ip.html publishes the ranges of the crawler, but the address `42.236.12.130` of those ranges carries the reverse name `hn.kd.ny.adsl`, which carries no address record and does not forward-confirm |

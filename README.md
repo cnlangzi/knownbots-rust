@@ -273,7 +273,6 @@ is compiled into the crate.
 | applebot | Apple | SearchEngine | Applebot | list |
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |
 | bingbot | Microsoft | SearchEngine | bingbot | list |
-| bingpreview | Microsoft | SearchEngine | BingPreview | dns |
 | bytespider | ByteDance | AITraining | Bytespider | static |
 | ccbot | CommonCrawl | AITraining | CCBot | list+dns |
 | censysinspect | Censys | Security | CensysInspect | dns |

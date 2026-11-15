@@ -43,10 +43,6 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("bingbot.yaml", include_str!("../../conf.d/bingbot.yaml")),
     (
-        "bingpreview.yaml",
-        include_str!("../../conf.d/bingpreview.yaml"),
-    ),
-    (
         "bytespider.yaml",
         include_str!("../../conf.d/bytespider.yaml"),
     ),
@@ -248,11 +244,11 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "semrushbot.yaml",
         include_str!("../../conf.d/semrushbot.yaml"),
     ),
+    ("seokicks.yaml", include_str!("../../conf.d/seokicks.yaml")),
     (
         "seznambot.yaml",
         include_str!("../../conf.d/seznambot.yaml"),
     ),
-    ("seokicks.yaml", include_str!("../../conf.d/seokicks.yaml")),
     (
         "siteauditbot.yaml",
         include_str!("../../conf.d/siteauditbot.yaml"),
@@ -455,15 +451,21 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         }
         "bingbot" => "Microsoft",
         "baiduspider" => "Baidu",
+        "seznambot" => "Seznam",
         "yandexbot" => "Yandex",
         "duckduckbot" | "duckassistbot" => "DuckDuckGo",
+        "yeti" => "Naver",
         "sogou" => "Sogou",
         "applebot" | "applebot-extended" => "Apple",
         "petalbot" => "Huawei",
         "gptbot" | "chatgpt-user" | "oai-searchbot" | "oai-adsbot" => "OpenAI",
         n if n.starts_with("claude") => "Anthropic",
         "amazonbot" | "amzn-searchbot" | "amzn-user" => "Amazon",
-        "meta-externalagent" | "facebookexternalhit" | "whatsapp" => "Meta",
+        "meta-externalagent"
+        | "meta-externalfetcher"
+        | "meta-webindexer"
+        | "facebookexternalhit"
+        | "whatsapp" => "Meta",
         "perplexity-user" | "perplexitybot" => "Perplexity",
         n if n.starts_with("mistralai") => "Mistral",
         "bytespider" => "ByteDance",
@@ -484,6 +486,11 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "mj12bot" => "Majestic",
         "mojeekbot" => "Mojeek",
         "youbot" => "You.com",
+        "censysinspect" => "Censys",
+        "dataforseobot" => "DataForSEO",
+        "hetrixtools" => "HetrixTools",
+        "seokicks" => "SEOkicks",
+        "sitebulb" => "Sitebulb",
         _ => "Unknown",
     }
 }

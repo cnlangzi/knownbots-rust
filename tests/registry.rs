@@ -2,12 +2,15 @@
 //! operator overrides, and the contract the definitions have to satisfy.
 
 mod common;
+#[path = "common/dns.rs"]
+mod dns;
 
 use std::collections::HashSet;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 
 use common::{Source, Sources};
+use dns::DNS_CRAWLERS;
 use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
 
 #[cfg(feature = "full")]
@@ -89,7 +92,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 80, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 79, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -278,6 +281,15 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
     assert_eq!(vendor_for("youbot"), "You.com");
+    assert_eq!(vendor_for("censysinspect"), "Censys");
+    assert_eq!(vendor_for("dataforseobot"), "DataForSEO");
+    assert_eq!(vendor_for("hetrixtools"), "HetrixTools");
+    assert_eq!(vendor_for("meta-externalfetcher"), "Meta");
+    assert_eq!(vendor_for("meta-webindexer"), "Meta");
+    assert_eq!(vendor_for("seznambot"), "Seznam");
+    assert_eq!(vendor_for("seokicks"), "SEOkicks");
+    assert_eq!(vendor_for("sitebulb"), "Sitebulb");
+    assert_eq!(vendor_for("yeti"), "Naver");
     assert_eq!(vendor_for("mojeekbot"), "Mojeek");
     assert_eq!(vendor_for("semrushbot-esi"), "Semrush");
     assert_eq!(vendor_for("semrushbot-ft"), "Semrush");
@@ -833,112 +845,40 @@ fn the_background_work_needs_no_runtime_of_the_host() {
 fn the_definitions_of_the_crawlers_of_the_reverse_dns_hold_their_fields() {
     let bots = load_bots(None).expect("the embedded definitions must load");
 
-    for (name, kind, vendor, marker, domains, sample) in [
-        (
-            "bingpreview",
-            BotKind::SearchEngine,
-            "Microsoft",
-            "BingPreview",
-            &["search.msn.com"][..],
-            "40.77.167.1",
-        ),
-        (
-            "censysinspect",
-            BotKind::Security,
-            "Censys",
-            "CensysInspect",
-            &["censys-scanner.com"][..],
-            "162.142.125.1",
-        ),
-        (
-            "dataforseobot",
-            BotKind::SEO,
-            "DataForSEO",
-            "DataForSeoBot",
-            &["dataforseo.com"][..],
-            "136.243.228.176",
-        ),
-        (
-            "hetrixtools",
-            BotKind::Monitor,
-            "HetrixTools",
-            "HetrixTools",
-            &["hetrixtools.com"][..],
-            "52.207.41.187",
-        ),
-        (
-            "meta-externalfetcher",
-            BotKind::AIAssist,
-            "Meta",
-            "meta-externalfetcher",
-            &["fbsv.net", "tfbnw.net", "facebook.com"][..],
-            "66.220.144.40",
-        ),
-        (
-            "meta-webindexer",
-            BotKind::AIAssist,
-            "Meta",
-            "meta-webindexer",
-            &["fbsv.net", "tfbnw.net", "facebook.com"][..],
-            "66.220.144.40",
-        ),
-        (
-            "seznambot",
-            BotKind::SearchEngine,
-            "Seznam",
-            "SeznamBot",
-            &["seznam.cz"][..],
-            "77.75.77.95",
-        ),
-        (
-            "seokicks",
-            BotKind::SEO,
-            "SEOkicks",
-            "SEOkicks",
-            &["seokicks.de"][..],
-            "65.21.226.48",
-        ),
-        (
-            "sitebulb",
-            BotKind::SEO,
-            "Sitebulb",
-            "Sitebulb",
-            &["sitebulb.com"][..],
-            "78.40.58.130",
-        ),
-        (
-            "yeti",
-            BotKind::SearchEngine,
-            "Naver",
-            "Yeti",
-            &["naver.com"][..],
-            "125.209.235.169",
-        ),
-    ] {
+    for crawler in DNS_CRAWLERS {
         let bot = bots
             .iter()
-            .find(|bot| bot.name == name)
-            .unwrap_or_else(|| panic!("{name} in the registry"));
-        assert_eq!(bot.kind, kind);
-        assert_eq!(bot.vendor, vendor);
-        assert_eq!(bot.ua, marker);
+            .find(|bot| bot.name == crawler.name)
+            .unwrap_or_else(|| panic!("{} in the registry", crawler.name));
+        assert_eq!(bot.kind, crawler.kind);
+        assert_eq!(bot.vendor, crawler.vendor);
+        assert_eq!(bot.ua, crawler.marker);
         assert!(
             bot.urls.is_empty(),
-            "the vendor publishes no address space for {name}"
+            "the definition of {} states no published address space",
+            crawler.name
         );
         assert!(
             bot.rdns,
-            "the crawler {name} is verified by the reverse DNS of its vendor"
+            "the crawler {} is verified by the reverse DNS of its vendor",
+            crawler.name
         );
-        assert_eq!(bot.domains, domains);
+        assert_eq!(bot.domains, crawler.domains);
         assert!(
             bot.custom.is_empty(),
-            "the crawler {name} states no prefix of its own"
+            "the crawler {} states no prefix of its own",
+            crawler.name
         );
         assert_eq!(
             bot.sample,
-            Some(sample.parse().expect("an address")),
-            "the crawler {name} states no sample"
+            Some(crawler.sample.parse().expect("an address")),
+            "the sample of {} is not the address the definition states",
+            crawler.name
+        );
+        assert!(
+            crawler.sample_is_under_a_domain(),
+            "the reverse name of the sample of {} is under none of its domains",
+            crawler.name
         );
     }
 }

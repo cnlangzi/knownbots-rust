@@ -61,10 +61,6 @@ bingbot:
   url: "https://www.bing.com/webmasters/help/how-to-verify-bingbot-3905dc26"
   ua:
     - "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)"
-bingpreview:
-  url: "https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0"
-  ua:
-    - "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b"
 bytespider:
   url: "https://crawler.bytedance.com/"
   ua:
