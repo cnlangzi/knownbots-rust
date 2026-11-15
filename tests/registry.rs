@@ -862,22 +862,20 @@ fn the_definition_of_the_crawler_of_common_crawl_states_the_sample_it_was_confir
     assert_eq!(ccbot.sample, Some("3.41.188.33".parse::<IpAddr>().unwrap()));
 }
 
-/// The crawlers whose addresses carry no confirmed address state no sample.
+/// The definitions of the crawlers of Discord, of Perplexity, of Reddit, of
+/// Slack, of Twitter and of Meta that carry no confirmed address state no
+/// sample.
 ///
 /// A sample is a confirmed address: the reverse name of the address has to be
 /// under one of the domains of the crawler and has to resolve forward back to
-/// the address. No address of these crawlers is one, so their definitions
-/// state no sample, and the health check keeps judging them by their domains.
+/// the address. A crawler that states no sample is judged by its domains.
 ///
-/// The reason differs per crawler, and it is the reason the addresses of the
-/// crawler were probed for:
-/// - the reverse names of the addresses of the crawler of Discord, of the two
-///   crawlers of Perplexity and of the crawler of Slack resolve in the zone
-///   of a hosting provider, not in a zone of the vendor;
-/// - the reverse names of the addresses of the crawler of Twitter resolve
-///   under a domain of the vendor that the definition does not name;
-/// - no record of the crawler of Reddit and of the crawler of WhatsApp was
-///   found, so no address of them was probed.
+/// The reverse names of the addresses of the crawler of Discord, of the two
+/// crawlers of Perplexity and of the crawler of Slack resolve in the zone of a
+/// hosting provider, not in a zone of the vendor. The reverse names of the
+/// addresses of the crawler of Twitter resolve under `twttr.com`, a domain of
+/// the vendor that the definition does not name. The crawler of Reddit and the
+/// crawler of WhatsApp have no address of their own to confirm.
 #[test]
 fn the_crawlers_without_a_confirmed_address_state_no_sample() {
     let bots = load_bots(None).expect("the embedded definitions must load");
