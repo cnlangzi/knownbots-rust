@@ -88,7 +88,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 60, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 61, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -276,6 +276,7 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("mistralai-user"), "Mistral");
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
+    assert_eq!(vendor_for("youbot"), "You.com");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 
@@ -528,6 +529,40 @@ fn the_definitions_of_the_crawlers_of_duckduck_go_hold_their_fields() {
         search.domains.is_empty(),
         "the crawler has no reverse DNS source"
     );
+}
+
+/// The definition of the crawler of You.com holds the fields the vendor
+/// publishes.
+///
+/// The vendor states the address space of the crawler as one network and
+/// publishes no machine-readable list of it, so the definition holds the
+/// network itself. A definition that named a broader address space would
+/// verify a request that the vendor does not own.
+#[test]
+fn the_definition_of_the_crawler_of_you_com_holds_the_fields_the_vendor_publishes() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let youbot = bots
+        .iter()
+        .find(|bot| bot.name == "youbot")
+        .expect("youbot in the registry");
+    assert_eq!(youbot.kind, BotKind::SearchEngine);
+    assert_eq!(youbot.vendor, "You.com");
+    assert_eq!(youbot.ua, "YouBot");
+    assert!(
+        youbot.urls.is_empty(),
+        "the vendor publishes no machine-readable list of the address space"
+    );
+    assert!(
+        !youbot.rdns,
+        "the crawler is verified by its stated prefixes"
+    );
+    assert!(
+        youbot.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    let prefixes: Vec<String> = youbot.custom.iter().map(|net| net.to_string()).collect();
+    assert_eq!(prefixes, ["68.67.112.0/24"]);
 }
 
 #[test]

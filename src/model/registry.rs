@@ -218,6 +218,7 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "yandexbot.yaml",
         include_str!("../../conf.d/yandexbot.yaml"),
     ),
+    ("youbot.yaml", include_str!("../../conf.d/youbot.yaml")),
 ];
 
 /// What the loader made of one definition.
@@ -416,6 +417,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         n if n.starts_with("semrush") => "Semrush",
         "ahrefsbot" => "Ahrefs",
         "mj12bot" => "Majestic",
+        "youbot" => "You.com",
         _ => "Unknown",
     }
 }
