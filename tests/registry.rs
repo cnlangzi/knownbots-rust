@@ -862,8 +862,7 @@ fn the_definition_of_the_crawler_of_common_crawl_states_the_sample_it_was_confir
     assert_eq!(ccbot.sample, Some("3.41.188.33".parse::<IpAddr>().unwrap()));
 }
 
-/// The definitions of the crawlers of Discord, of Perplexity, of Reddit, of
-/// Slack, of Twitter and of Meta that carry no confirmed address state no
+/// The definitions of the crawlers that carry no confirmed address state no
 /// sample.
 ///
 /// A sample is a confirmed address: the reverse name of the address has to be
@@ -880,24 +879,32 @@ fn the_definition_of_the_crawler_of_common_crawl_states_the_sample_it_was_confir
 fn the_crawlers_without_a_confirmed_address_state_no_sample() {
     let bots = load_bots(None).expect("the embedded definitions must load");
 
-    for name in [
-        "discordbot",
-        "perplexitybot",
-        "perplexity-user",
-        "redditbot",
-        "slackbot",
-        "twitterbot",
-        "whatsapp",
-    ] {
+    let mut sampleless: Vec<&str> = bots
+        .iter()
+        .filter(|bot| bot.rdns && bot.sample.is_none())
+        .map(|bot| bot.name.as_str())
+        .collect();
+    sampleless.sort_unstable();
+
+    assert_eq!(
+        sampleless,
+        [
+            "discordbot",
+            "perplexity-user",
+            "perplexitybot",
+            "redditbot",
+            "slackbot",
+            "twitterbot",
+            "whatsapp",
+        ],
+        "the crawlers of the registry that carry a reverse DNS and state no sample are named here"
+    );
+
+    for name in sampleless {
         let bot = bots
             .iter()
             .find(|bot| bot.name == name)
             .unwrap_or_else(|| panic!("{name} in the registry"));
-        assert_eq!(bot.sample, None, "the crawler {name} states no sample");
-        assert!(
-            bot.rdns,
-            "the crawler {name} is verified by the reverse DNS of its vendor"
-        );
         assert!(
             !bot.domains.is_empty(),
             "the crawler {name} names the domains of its vendor"
