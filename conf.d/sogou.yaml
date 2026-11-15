@@ -8,3 +8,4 @@ ua: "Sogou"
 domains:
   - "sogou.com"
 rdns: true
+sample: "112.86.225.199"

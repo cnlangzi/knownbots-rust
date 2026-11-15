@@ -7,3 +7,4 @@ ua: "MJ12bot"
 rdns: true
 domains:
   - "mj12bot.com"
+sample: "195.191.219.132"

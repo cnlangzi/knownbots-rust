@@ -8,3 +8,4 @@ rdns: true
 domains:
   - "pinterest.com"
   - "pinimg.com"
+sample: "54.236.1.2"

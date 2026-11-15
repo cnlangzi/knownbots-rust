@@ -1,5 +1,10 @@
 //! The crawlers the registry verifies by the reverse DNS of their vendor.
 //!
+//! Every row states the fields of a definition and the reverse name of the
+//! sample of the crawler. The definition of a crawler in the table names no
+//! published address space, so that the reverse DNS of its vendor is its only
+//! source.
+//!
 //! The table is shared by the tests that read it, so that the fields of a
 //! definition and the reverse name of its sample are stated once.
 
@@ -69,6 +74,15 @@ pub const DNS_CRAWLERS: &[DnsCrawler] = &[
         hostname: "wk1.hetrixtools.com",
     },
     DnsCrawler {
+        name: "linkedinbot",
+        kind: BotKind::SocialMedia,
+        vendor: "LinkedIn",
+        marker: "LinkedInBot",
+        domains: &["linkedin.com"],
+        sample: "108.174.2.206",
+        hostname: "108-174-2-206.fwd.linkedin.com",
+    },
+    DnsCrawler {
         name: "meta-externalfetcher",
         kind: BotKind::AIAssist,
         vendor: "Meta",
@@ -85,6 +99,24 @@ pub const DNS_CRAWLERS: &[DnsCrawler] = &[
         domains: &["fbsv.net", "tfbnw.net", "facebook.com"],
         sample: "66.220.144.40",
         hostname: "corpout3.snc1.tfbnw.net",
+    },
+    DnsCrawler {
+        name: "mj12bot",
+        kind: BotKind::SEO,
+        vendor: "Majestic",
+        marker: "MJ12bot",
+        domains: &["mj12bot.com"],
+        sample: "195.191.219.132",
+        hostname: "crawl-vykctc.mj12bot.com",
+    },
+    DnsCrawler {
+        name: "pinterestbot",
+        kind: BotKind::SocialMedia,
+        vendor: "Pinterest",
+        marker: "Pinterestbot",
+        domains: &["pinterest.com", "pinimg.com"],
+        sample: "54.236.1.2",
+        hostname: "crawl-54-236-1-2.pinterest.com",
     },
     DnsCrawler {
         name: "semrushbot",
@@ -166,6 +198,33 @@ pub const DNS_CRAWLERS: &[DnsCrawler] = &[
         domains: &["sitebulb.com"],
         sample: "78.40.58.130",
         hostname: "crawl-78-40-58-130.uk.sitebulb.com",
+    },
+    DnsCrawler {
+        name: "sogou",
+        kind: BotKind::SearchEngine,
+        vendor: "Sogou",
+        marker: "Sogou",
+        domains: &["sogou.com"],
+        sample: "112.86.225.199",
+        hostname: "sogouspider-112-86-225-199.crawl.sogou.com",
+    },
+    DnsCrawler {
+        name: "telegrambot",
+        kind: BotKind::SocialMedia,
+        vendor: "Telegram",
+        marker: "TelegramBot",
+        domains: &["telegram.org"],
+        sample: "149.154.161.215",
+        hostname: "ip-149-154-161-215.ptr.telegram.org",
+    },
+    DnsCrawler {
+        name: "yandexbot",
+        kind: BotKind::SearchEngine,
+        vendor: "Yandex",
+        marker: "YandexBot",
+        domains: &["yandex.com", "yandex.net", "yandex.ru"],
+        sample: "87.250.224.216",
+        hostname: "87-250-224-216.spider.yandex.com",
     },
     DnsCrawler {
         name: "yeti",
