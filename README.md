@@ -273,7 +273,7 @@ is compiled into the crate.
 | applebot | Apple | SearchEngine | Applebot | list |
 | baiduspider | Baidu | SearchEngine | Baiduspider | dns |
 | bingbot | Microsoft | SearchEngine | bingbot | list |
-| bytespider | ByteDance | AITraining | Bytespider | dns |
+| bytespider | ByteDance | AITraining | Bytespider | static |
 | ccbot | CommonCrawl | AITraining | CCBot | list+dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claude-searchbot | Anthropic | AIAssist | Claude-SearchBot | list |
@@ -315,6 +315,7 @@ is compiled into the crate.
 | pingdom | Pingdom | Monitor | Pingdom | list |
 | pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
 | redditbot | Reddit | SocialMedia | redditbot | dns |
+| rytebot | Semrush | SEO | RyteBot | dns |
 | semrushbot | Semrush | SEO | SemrushBot | dns |
 | semrushbot-ba | Semrush | SEO | SemrushBot-BA | dns |
 | semrushbot-esi | Semrush | SEO | SemrushBot-ESI | dns |
@@ -322,8 +323,10 @@ is compiled into the crate.
 | semrushbot-ocob | Semrush | SEO | SemrushBot-OCOB | dns |
 | semrushbot-si | Semrush | SEO | SemrushBot-SI | dns |
 | semrushbot-swa | Semrush | SEO | SemrushBot-SWA | dns |
+| siteauditbot | Semrush | SEO | SiteAuditBot | dns |
 | slackbot | Slack | SocialMedia | Slackbot | dns |
 | sogou | Sogou | SearchEngine | Sogou | dns |
+| splitsignalbot | Semrush | SEO | SplitSignalBot | dns |
 | telegrambot | Telegram | SocialMedia | TelegramBot | dns |
 | twitterbot | Twitter | SocialMedia | Twitterbot | dns |
 | uptimerobot | UptimeRobot | Monitor | UptimeRobot | list |
@@ -386,6 +389,7 @@ rdns: true
 domains:
   - "baidu.com"
   - "baidu.jp"
+sample: "220.181.108.94"
 ```
 
 The optional `sample` is the address the definition was confirmed with: its

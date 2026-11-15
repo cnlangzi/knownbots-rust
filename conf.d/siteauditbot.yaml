@@ -1,0 +1,11 @@
+# Semrush Site Audit crawler
+# Official UA: SiteAuditBot
+# https://www.semrush.com/bot.html
+kind: SEO
+name: siteauditbot
+vendor: "Semrush"
+ua: "SiteAuditBot"
+rdns: true
+domains:
+  - "semrush.com"
+sample: "85.208.98.200"
