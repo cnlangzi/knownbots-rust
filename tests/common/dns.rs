@@ -1,11 +1,14 @@
-//! The crawlers the registry verifies by the reverse DNS of their vendor.
+//! The crawlers whose only source is the reverse DNS of their vendor.
+//!
+//! A crawler whose vendor publishes an address space for it as well is
+//! verified by both, so it is not in this table.
 //!
 //! The table is shared by the tests that read it, so that the fields of a
 //! definition and the reverse name of its sample are stated once.
 
 use knownbots::BotKind;
 
-/// A crawler the registry verifies by the reverse DNS of its vendor.
+/// A crawler whose only source is the reverse DNS of its vendor.
 ///
 /// The table of the crawlers is shared by the tests, so that the fields of a
 /// definition and the reverse name of its sample are stated once.
@@ -39,7 +42,7 @@ impl DnsCrawler {
     }
 }
 
-/// The crawlers the registry verifies by the reverse DNS of their vendor.
+/// The crawlers whose only source is the reverse DNS of their vendor.
 pub const DNS_CRAWLERS: &[DnsCrawler] = &[
     DnsCrawler {
         name: "censysinspect",
