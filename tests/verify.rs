@@ -548,6 +548,48 @@ fn the_crawlers_of_semrush_are_told_apart_by_their_markers() {
     assert_eq!(main.vendor, "Semrush");
 }
 
+/// The seven crawlers of Semrush share one address space.
+///
+/// The vendor keeps the reverse DNS of all of its crawlers under
+/// `semrush.com`, so the address space of a crawler of Semrush is the address
+/// space of the vendor: the address decides whether a request may claim a
+/// crawler of Semrush at all, and the marker decides which one it claims to be.
+#[test]
+fn the_crawlers_of_semrush_share_the_address_space_of_their_vendor() {
+    let (_directory, validator) = validator();
+    for bot in [
+        "semrushbot",
+        "semrushbot-ba",
+        "semrushbot-esi",
+        "semrushbot-ft",
+        "semrushbot-ocob",
+        "semrushbot-si",
+        "semrushbot-swa",
+    ] {
+        validator
+            .seed_rdns(bot, "85.208.98.25", "1.lbt.bot.semrush.com")
+            .unwrap();
+    }
+
+    // The one address confirms a request that names any of the crawlers of the
+    // vendor.
+    for (name, marker) in [
+        ("semrushbot", "SemrushBot"),
+        ("semrushbot-ba", "SemrushBot-BA"),
+        ("semrushbot-esi", "SemrushBot-ESI"),
+        ("semrushbot-ft", "SemrushBot-FT"),
+        ("semrushbot-ocob", "SemrushBot-OCOB"),
+        ("semrushbot-si", "SemrushBot-SI"),
+        ("semrushbot-swa", "SemrushBot-SWA"),
+    ] {
+        let ua =
+            format!("Mozilla/5.0 (compatible; {marker}/1.0; +http://www.semrush.com/bot.html)");
+        let result = validator.verify(&ua, ip("85.208.98.25"));
+        assert!(result.is_verified());
+        assert_eq!(result.name, name);
+    }
+}
+
 /// A hostname outside the domains of the vendor does not confirm a Semrush
 /// crawler, even when the request names one.
 #[test]
