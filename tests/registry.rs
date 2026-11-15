@@ -89,7 +89,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 62, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 65, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -279,6 +279,9 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
     assert_eq!(vendor_for("youbot"), "You.com");
     assert_eq!(vendor_for("mojeekbot"), "Mojeek");
+    assert_eq!(vendor_for("siteauditbot"), "Semrush");
+    assert_eq!(vendor_for("splitsignalbot"), "Semrush");
+    assert_eq!(vendor_for("rytebot"), "Semrush");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 

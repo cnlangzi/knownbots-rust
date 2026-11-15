@@ -1,0 +1,10 @@
+# Semrush SplitSignal crawler
+# Official UA: SplitSignalBot
+# https://www.semrush.com/bot.html
+kind: SEO
+name: splitsignalbot
+vendor: "Semrush"
+ua: "SplitSignalBot"
+rdns: true
+domains:
+  - "semrush.com"
