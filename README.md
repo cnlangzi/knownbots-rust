@@ -306,6 +306,7 @@ is compiled into the crate.
 | mistralai-index | Mistral | AIAssist | MistralAI-Index | list |
 | mistralai-user | Mistral | AIAssist | MistralAI-User | list |
 | mj12bot | Majestic | SEO | MJ12bot | dns |
+| mojeekbot | Mojeek | SearchEngine | MojeekBot | list+dns |
 | oai-adsbot | OpenAI | Monitor | OAI-AdsBot | list |
 | oai-searchbot | OpenAI | AIAssist | OAI-SearchBot | list |
 | perplexity-user | Perplexity | AIAssist | Perplexity-User | list+dns |
@@ -373,8 +374,8 @@ The parsers the crate knows are:
 
 A definition without a `parser` is read with the text parser.
 
-A crawler that is verified by its reverse DNS names the domains its addresses
-resolve to:
+A crawler that carries a reverse DNS names the domains its addresses resolve
+to:
 
 ```yaml
 kind: SearchEngine

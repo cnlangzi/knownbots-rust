@@ -1,12 +1,13 @@
 //! The health of every source of the registry.
 //!
-//! The registry depends on the outside world: of its 66 crawlers, 42 are
-//! backed by a published address space the crate downloads, 25 by the reverse
+//! The registry depends on the outside world: of its 67 crawlers, 43 are
+//! backed by a published address space the crate downloads, 26 by the reverse
 //! DNS of their vendor, and 2 state their own prefixes; the crawlers of
-//! Perplexity and the crawler of Common Crawl are backed by both, and the
-//! check reads every one of their sources. The report holds one row per
-//! source, so a crawler that depends on two sources holds two rows. The check
-//! writes the outcome of the run to `target/provider-health/report.json`.
+//! Perplexity, the crawler of Common Crawl and the crawler of Mojeek are
+//! backed by both, and the check reads every one of their sources. The report
+//! holds one row per source, so a crawler that depends on two sources holds
+//! two rows. The check writes the outcome of the run to
+//! `target/provider-health/report.json`.
 //!
 //! The sources are on the public internet, so the tests are ignored: the
 //! ordinary suite of the crate never depends on the uptime of a vendor. Run

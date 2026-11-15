@@ -39,6 +39,12 @@ const DUCK_ASSIST_UA: &str = "DuckAssistBot/1.2; (+http://duckduckgo.com/duckass
 /// search index.
 const DUCK_DUCK_UA: &str = "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)";
 
+/// A User-Agent that carries the marker the vendor publishes.
+///
+/// The vendor publishes no User-Agent header of its own — it names the crawler
+/// and the token `MojeekBot` — so the string below carries that token.
+const MOJEEK_UA: &str = "Mozilla/5.0 (compatible; MojeekBot; +https://www.mojeek.com/bot.html)";
+
 /// The User-Agent Semrush publishes for the crawler of its On Page SEO Checker.
 const SEMRUSH_SI_UA: &str =
     "Mozilla/5.0 (compatible; SemrushBot-SI/0.97; +http://www.semrush.com/bot.html)";
@@ -520,6 +526,38 @@ fn the_two_crawlers_of_duckduck_go_are_told_apart_by_their_markers() {
 
     let search = validator.verify(DUCK_DUCK_UA, ip("104.43.54.127"));
     assert_eq!(search.name, "duckduckbot");
+}
+
+/// The crawler of Mojeek is backed by the list the vendor publishes and by its
+/// reverse DNS: the definition names both, and each path confirms a request.
+#[test]
+fn the_mojeek_crawler_is_verified_by_its_list_and_by_its_reverse_dns() {
+    let (_directory, validator) = validator();
+
+    let bot = validator
+        .bots()
+        .iter()
+        .find(|bot| bot.name == "mojeekbot")
+        .expect("mojeekbot in the registry");
+    assert!(!bot.urls.is_empty(), "the crawler names no published list");
+    assert!(bot.rdns, "the crawler carries no reverse DNS");
+
+    // The address space the vendor publishes, seeded.
+    validator
+        .seed_prefix("mojeekbot", "5.102.173.64/28")
+        .unwrap();
+    let result = validator.verify(MOJEEK_UA, ip("5.102.173.71"));
+    assert!(result.is_verified());
+    assert_eq!(result.name, "mojeekbot");
+
+    // The reverse DNS confirms a request from an address the published address
+    // space does not cover.
+    validator
+        .seed_rdns("mojeekbot", "203.0.113.7", "crawl-203-0-113-7.mojeek.com")
+        .unwrap();
+    let result = validator.verify(MOJEEK_UA, ip("203.0.113.7"));
+    assert!(result.is_verified());
+    assert_eq!(result.name, "mojeekbot");
 }
 
 /// The crawlers of Semrush are told apart by their markers.
