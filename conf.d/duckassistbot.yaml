@@ -1,0 +1,10 @@
+# DuckAssistBot - DuckDuckGo crawler that fetches the pages of the AI-assisted answers
+# https://duckduckgo.com/duckassistbot.html
+# JSON format: https://duckduckgo.com/duckassistbot.json
+kind: AIAssist
+name: duckassistbot
+vendor: "DuckDuckGo"
+parser: google
+ua: "DuckAssistBot"
+urls:
+  - "https://duckduckgo.com/duckassistbot.json"
