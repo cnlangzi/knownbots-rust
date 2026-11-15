@@ -1,0 +1,11 @@
+# DataForSeoBot - DataForSEO backlink crawler
+# Official UA: DataForSeoBot
+# https://dataforseo.com/dataforseo-bot
+kind: SEO
+name: dataforseobot
+vendor: "DataForSEO"
+ua: "DataForSeoBot"
+rdns: true
+domains:
+  - "dataforseo.com"
+sample: "136.243.228.176"

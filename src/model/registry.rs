@@ -48,6 +48,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("ccbot.yaml", include_str!("../../conf.d/ccbot.yaml")),
     (
+        "censysinspect.yaml",
+        include_str!("../../conf.d/censysinspect.yaml"),
+    ),
+    (
         "chatgpt-user.yaml",
         include_str!("../../conf.d/chatgpt-user.yaml"),
     ),
@@ -66,6 +70,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "cloudflare-healthchecks.yaml",
         include_str!("../../conf.d/cloudflare-healthchecks.yaml"),
+    ),
+    (
+        "dataforseobot.yaml",
+        include_str!("../../conf.d/dataforseobot.yaml"),
     ),
     (
         "discordbot.yaml",
@@ -145,6 +153,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("gptbot.yaml", include_str!("../../conf.d/gptbot.yaml")),
     (
+        "hetrixtools.yaml",
+        include_str!("../../conf.d/hetrixtools.yaml"),
+    ),
+    (
         "linkedinbot.yaml",
         include_str!("../../conf.d/linkedinbot.yaml"),
     ),
@@ -155,6 +167,14 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     (
         "meta-externalagent.yaml",
         include_str!("../../conf.d/meta-externalagent.yaml"),
+    ),
+    (
+        "meta-externalfetcher.yaml",
+        include_str!("../../conf.d/meta-externalfetcher.yaml"),
+    ),
+    (
+        "meta-webindexer.yaml",
+        include_str!("../../conf.d/meta-webindexer.yaml"),
     ),
     (
         "mistralai-index.yaml",
@@ -224,10 +244,16 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "semrushbot.yaml",
         include_str!("../../conf.d/semrushbot.yaml"),
     ),
+    ("seokicks.yaml", include_str!("../../conf.d/seokicks.yaml")),
+    (
+        "seznambot.yaml",
+        include_str!("../../conf.d/seznambot.yaml"),
+    ),
     (
         "siteauditbot.yaml",
         include_str!("../../conf.d/siteauditbot.yaml"),
     ),
+    ("sitebulb.yaml", include_str!("../../conf.d/sitebulb.yaml")),
     ("slackbot.yaml", include_str!("../../conf.d/slackbot.yaml")),
     ("sogou.yaml", include_str!("../../conf.d/sogou.yaml")),
     (
@@ -251,6 +277,7 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "yandexbot.yaml",
         include_str!("../../conf.d/yandexbot.yaml"),
     ),
+    ("yeti.yaml", include_str!("../../conf.d/yeti.yaml")),
     ("youbot.yaml", include_str!("../../conf.d/youbot.yaml")),
 ];
 
@@ -424,15 +451,21 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         }
         "bingbot" => "Microsoft",
         "baiduspider" => "Baidu",
+        "seznambot" => "Seznam",
         "yandexbot" => "Yandex",
         "duckduckbot" | "duckassistbot" => "DuckDuckGo",
+        "yeti" => "Naver",
         "sogou" => "Sogou",
         "applebot" | "applebot-extended" => "Apple",
         "petalbot" => "Huawei",
         "gptbot" | "chatgpt-user" | "oai-searchbot" | "oai-adsbot" => "OpenAI",
         n if n.starts_with("claude") => "Anthropic",
         "amazonbot" | "amzn-searchbot" | "amzn-user" => "Amazon",
-        "meta-externalagent" | "facebookexternalhit" | "whatsapp" => "Meta",
+        "meta-externalagent"
+        | "meta-externalfetcher"
+        | "meta-webindexer"
+        | "facebookexternalhit"
+        | "whatsapp" => "Meta",
         "perplexity-user" | "perplexitybot" => "Perplexity",
         n if n.starts_with("mistralai") => "Mistral",
         "bytespider" => "ByteDance",
@@ -453,6 +486,11 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "mj12bot" => "Majestic",
         "mojeekbot" => "Mojeek",
         "youbot" => "You.com",
+        "censysinspect" => "Censys",
+        "dataforseobot" => "DataForSEO",
+        "hetrixtools" => "HetrixTools",
+        "seokicks" => "SEOkicks",
+        "sitebulb" => "Sitebulb",
         _ => "Unknown",
     }
 }

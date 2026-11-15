@@ -1,0 +1,11 @@
+# Yeti - Naver search crawler
+# Official UA: Yeti/1.1
+# https://searchadvisor.naver.com/guide/seo-basic-firewall
+kind: SearchEngine
+name: yeti
+vendor: "Naver"
+ua: "Yeti"
+rdns: true
+domains:
+  - "naver.com"
+sample: "125.209.235.169"

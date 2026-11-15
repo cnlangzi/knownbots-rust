@@ -275,11 +275,13 @@ is compiled into the crate.
 | bingbot | Microsoft | SearchEngine | bingbot | list |
 | bytespider | ByteDance | AITraining | Bytespider | static |
 | ccbot | CommonCrawl | AITraining | CCBot | list+dns |
+| censysinspect | Censys | Security | CensysInspect | dns |
 | chatgpt-user | OpenAI | AIAssist | ChatGPT-User | list |
 | claude-searchbot | Anthropic | AIAssist | Claude-SearchBot | list |
 | claude-user | Anthropic | AIAssist | Claude-User | list |
 | claudebot | Anthropic | AITraining | ClaudeBot | list |
 | cloudflare-healthchecks | Cloudflare | Monitor | Cloudflare-Healthchecks | list |
+| dataforseobot | DataForSEO | SEO | DataForSeoBot | dns |
 | discordbot | Discord | SocialMedia | Discordbot | dns |
 | duckassistbot | DuckDuckGo | AIAssist | DuckAssistBot | list |
 | duckduckbot | DuckDuckGo | SearchEngine | DuckDuckBot | list |
@@ -300,9 +302,12 @@ is compiled into the crate.
 | googleother | Google | SearchEngine | GoogleOther | list |
 | googleproducer | Google | SearchEngine | GoogleProducer | list |
 | gptbot | OpenAI | AITraining | GPTBot | list |
+| hetrixtools | HetrixTools | Monitor | HetrixTools | dns |
 | linkedinbot | LinkedIn | SocialMedia | LinkedInBot | dns |
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
 | meta-externalagent | Meta | AITraining | meta-externalagent | dns |
+| meta-externalfetcher | Meta | AIAssist | meta-externalfetcher | dns |
+| meta-webindexer | Meta | AIAssist | meta-webindexer | dns |
 | mistralai-index | Mistral | AIAssist | MistralAI-Index | list |
 | mistralai-user | Mistral | AIAssist | MistralAI-User | list |
 | mj12bot | Majestic | SEO | MJ12bot | dns |
@@ -323,7 +328,10 @@ is compiled into the crate.
 | semrushbot-ocob | Semrush | SEO | SemrushBot-OCOB | dns |
 | semrushbot-si | Semrush | SEO | SemrushBot-SI | dns |
 | semrushbot-swa | Semrush | SEO | SemrushBot-SWA | dns |
+| seokicks | SEOkicks | SEO | SEOkicks | dns |
+| seznambot | Seznam | SearchEngine | SeznamBot | dns |
 | siteauditbot | Semrush | SEO | SiteAuditBot | dns |
+| sitebulb | Sitebulb | SEO | Sitebulb | dns |
 | slackbot | Slack | SocialMedia | Slackbot | dns |
 | sogou | Sogou | SearchEngine | Sogou | dns |
 | splitsignalbot | Semrush | SEO | SplitSignalBot | dns |
@@ -332,6 +340,7 @@ is compiled into the crate.
 | uptimerobot | UptimeRobot | Monitor | UptimeRobot | list |
 | whatsapp | Meta | SocialMedia | WhatsApp | dns |
 | yandexbot | Yandex | SearchEngine | YandexBot | dns |
+| yeti | Naver | SearchEngine | Yeti | dns |
 | youbot | You.com | SearchEngine | YouBot | static |
 
 The `source` column tells where the address space of a crawler comes from:

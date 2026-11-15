@@ -1,0 +1,13 @@
+# Meta-WebIndexer - Meta crawler that indexes the web for Meta AI
+# Official UA: meta-webindexer/1.1
+# https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/
+kind: AIAssist
+name: meta-webindexer
+vendor: "Meta"
+ua: "meta-webindexer"
+rdns: true
+domains:
+  - "fbsv.net"
+  - "tfbnw.net"
+  - "facebook.com"
+sample: "66.220.144.40"

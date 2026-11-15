@@ -1,9 +1,13 @@
 //! The verification model: the marker of the request and the address of the
 //! request both have to hold.
 
+#[path = "common/dns.rs"]
+mod dns;
+
 use std::net::IpAddr;
 use std::sync::Arc;
 
+use dns::DNS_CRAWLERS;
 use knownbots::{Validator, ValidatorOptions, VerifyStatus};
 
 /// A validator with an empty cache.
@@ -674,6 +678,52 @@ fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
         .unwrap();
 
     let result = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
+}
+
+/// The crawlers that are known only by their reverse DNS are verified by the
+/// reverse names of their vendors.
+///
+/// Each of them names a domain the vendor owns, and an address whose reverse
+/// name ends in that domain is the address of the crawler.
+#[test]
+fn the_crawlers_of_the_reverse_dns_are_verified_by_their_reverse_names() {
+    let (_directory, validator) = validator();
+
+    for crawler in DNS_CRAWLERS {
+        validator
+            .seed_rdns(crawler.name, crawler.sample, crawler.hostname)
+            .unwrap();
+
+        assert!(
+            crawler.sample_is_under_a_domain(),
+            "the reverse name of the sample of {} is under none of its domains",
+            crawler.name
+        );
+
+        let ua = format!("Mozilla/5.0 (compatible; {}/1.0)", crawler.marker);
+        let result = validator.verify(&ua, ip(crawler.sample));
+        assert!(result.is_verified(), "{} was not verified", crawler.name);
+        assert_eq!(result.name, crawler.name);
+        assert_eq!(result.vendor, crawler.vendor);
+        assert_eq!(result.kind, crawler.kind);
+    }
+}
+
+/// A hostname outside the domains of the vendor does not confirm a crawler that
+/// is known only by its reverse DNS, even when the request names one.
+#[test]
+fn a_claim_of_a_crawler_of_the_reverse_dns_from_an_address_outside_the_domains_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("seznambot", "203.0.113.7", "crawler.example.com")
+        .unwrap();
+
+    let result = validator.verify(
+        "Mozilla/5.0 (compatible; SeznamBot/4.0; +https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/)",
+        ip("203.0.113.7"),
+    );
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
 }

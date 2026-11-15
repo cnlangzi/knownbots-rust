@@ -2,12 +2,15 @@
 //! operator overrides, and the contract the definitions have to satisfy.
 
 mod common;
+#[path = "common/dns.rs"]
+mod dns;
 
 use std::collections::HashSet;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 
 use common::{Source, Sources};
+use dns::DNS_CRAWLERS;
 use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
 
 #[cfg(feature = "full")]
@@ -89,7 +92,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 70, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 79, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -278,6 +281,15 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
     assert_eq!(vendor_for("youbot"), "You.com");
+    assert_eq!(vendor_for("censysinspect"), "Censys");
+    assert_eq!(vendor_for("dataforseobot"), "DataForSEO");
+    assert_eq!(vendor_for("hetrixtools"), "HetrixTools");
+    assert_eq!(vendor_for("meta-externalfetcher"), "Meta");
+    assert_eq!(vendor_for("meta-webindexer"), "Meta");
+    assert_eq!(vendor_for("seznambot"), "Seznam");
+    assert_eq!(vendor_for("seokicks"), "SEOkicks");
+    assert_eq!(vendor_for("sitebulb"), "Sitebulb");
+    assert_eq!(vendor_for("yeti"), "Naver");
     assert_eq!(vendor_for("mojeekbot"), "Mojeek");
     assert_eq!(vendor_for("semrushbot-esi"), "Semrush");
     assert_eq!(vendor_for("semrushbot-ft"), "Semrush");
@@ -819,4 +831,54 @@ fn the_background_work_needs_no_runtime_of_the_host() {
 
     validator.shutdown();
     drop(validator);
+}
+
+/// The definitions of the crawlers that are known only by their reverse DNS
+/// hold the fields the vendor publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's. Each of these crawlers is
+/// verified by the reverse DNS of its vendor, so the definition names the
+/// domain of the vendor and the address the crawler was confirmed with.
+#[test]
+fn the_definitions_of_the_crawlers_of_the_reverse_dns_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    for crawler in DNS_CRAWLERS {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == crawler.name)
+            .unwrap_or_else(|| panic!("{} in the registry", crawler.name));
+        assert_eq!(bot.kind, crawler.kind);
+        assert_eq!(bot.vendor, crawler.vendor);
+        assert_eq!(bot.ua, crawler.marker);
+        assert!(
+            bot.urls.is_empty(),
+            "the definition of {} states no published address space",
+            crawler.name
+        );
+        assert!(
+            bot.rdns,
+            "the crawler {} is verified by the reverse DNS of its vendor",
+            crawler.name
+        );
+        assert_eq!(bot.domains, crawler.domains);
+        assert!(
+            bot.custom.is_empty(),
+            "the crawler {} states no prefix of its own",
+            crawler.name
+        );
+        assert_eq!(
+            bot.sample,
+            Some(crawler.sample.parse().expect("an address")),
+            "the sample of {} is not the address the definition states",
+            crawler.name
+        );
+        assert!(
+            crawler.sample_is_under_a_domain(),
+            "the reverse name of the sample of {} is under none of its domains",
+            crawler.name
+        );
+    }
 }

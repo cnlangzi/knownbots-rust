@@ -1,0 +1,11 @@
+# HetrixTools - HetrixTools uptime monitor
+# Official UA: HetrixTools Uptime Monitoring Bot
+# https://hetrixtools.com/uptime-monitor-bot/
+kind: Monitor
+name: hetrixtools
+vendor: "HetrixTools"
+ua: "HetrixTools"
+rdns: true
+domains:
+  - "hetrixtools.com"
+sample: "52.207.41.187"

@@ -1,0 +1,11 @@
+# SeznamBot - Seznam search crawler
+# Official UA: SeznamBot/4.0
+# https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/
+kind: SearchEngine
+name: seznambot
+vendor: "Seznam"
+ua: "SeznamBot"
+rdns: true
+domains:
+  - "seznam.cz"
+sample: "77.75.77.95"
