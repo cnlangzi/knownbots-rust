@@ -423,6 +423,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "uptimerobot" => "UptimeRobot",
         "pingdom" => "Pingdom",
         n if n.starts_with("cloudflare") => "Cloudflare",
+        "rytebot" | "siteauditbot" | "splitsignalbot" => "Semrush",
         n if n.starts_with("semrush") => "Semrush",
         "ahrefsbot" => "Ahrefs",
         "mj12bot" => "Majestic",
