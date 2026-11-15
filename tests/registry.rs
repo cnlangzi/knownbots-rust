@@ -277,6 +277,7 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("mistralai-index"), "Mistral");
     assert_eq!(vendor_for("duckassistbot"), "DuckDuckGo");
     assert_eq!(vendor_for("youbot"), "You.com");
+    assert_eq!(vendor_for("mojeekbot"), "Mojeek");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 
