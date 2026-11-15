@@ -1,0 +1,14 @@
+# MojeekBot - Mojeek search crawler
+# https://www.mojeek.com/bot.html
+# JSON format: https://www.mojeek.com/mojeekbot.json
+kind: SearchEngine
+name: mojeekbot
+vendor: "Mojeek"
+parser: google
+ua: "MojeekBot"
+domains:
+  - "mojeek.com"
+rdns: true
+urls:
+  - "https://www.mojeek.com/mojeekbot.json"
+sample: "5.102.173.71"
