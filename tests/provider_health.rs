@@ -1,7 +1,7 @@
 //! The health of every source of the registry.
 //!
-//! The registry depends on the outside world: of its 61 crawlers, 42 are
-//! backed by a published address space the crate downloads, 20 by the reverse
+//! The registry depends on the outside world: of its 64 crawlers, 42 are
+//! backed by a published address space the crate downloads, 23 by the reverse
 //! DNS of their vendor, and 2 state their own prefixes; the crawlers of
 //! Perplexity and the crawler of Common Crawl are backed by both, and the
 //! check reads every one of their sources. The report holds one row per

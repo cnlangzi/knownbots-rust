@@ -191,6 +191,7 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "redditbot.yaml",
         include_str!("../../conf.d/redditbot.yaml"),
     ),
+    ("rytebot.yaml", include_str!("../../conf.d/rytebot.yaml")),
     (
         "semrushbot-backlinks.yaml",
         include_str!("../../conf.d/semrushbot-backlinks.yaml"),
@@ -199,8 +200,16 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "semrushbot.yaml",
         include_str!("../../conf.d/semrushbot.yaml"),
     ),
+    (
+        "siteauditbot.yaml",
+        include_str!("../../conf.d/siteauditbot.yaml"),
+    ),
     ("slackbot.yaml", include_str!("../../conf.d/slackbot.yaml")),
     ("sogou.yaml", include_str!("../../conf.d/sogou.yaml")),
+    (
+        "splitsignalbot.yaml",
+        include_str!("../../conf.d/splitsignalbot.yaml"),
+    ),
     (
         "telegrambot.yaml",
         include_str!("../../conf.d/telegrambot.yaml"),

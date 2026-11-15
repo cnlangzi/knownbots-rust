@@ -1,0 +1,10 @@
+# Ryte crawler, published by Semrush
+# Official UA: RyteBot
+# https://www.semrush.com/bot.html
+kind: SEO
+name: rytebot
+vendor: "Semrush"
+ua: "RyteBot"
+rdns: true
+domains:
+  - "semrush.com"

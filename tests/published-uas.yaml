@@ -240,6 +240,10 @@ redditbot:
   url: "https://www.redditinc.com/policies/previews-terms"
   ua:
     - "Mozilla/5.0 (compatible; redditbot/1.0; +http://www.reddit.com/feedback)"
+rytebot:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "RyteBot"
 semrushbot:
   url: "https://www.semrush.com/bot.html"
   ua:
@@ -248,6 +252,10 @@ semrushbot-ba:
   url: "https://www.semrush.com/bot.html"
   ua:
     - "SemrushBot-BA"
+siteauditbot:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SiteAuditBot"
 slackbot:
   url: "https://api.slack.com/robots"
   ua:
@@ -258,6 +266,10 @@ sogou:
   ua:
     - "Sogou web spider"
     - "Sogou inst spider"
+splitsignalbot:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SplitSignalBot"
 telegrambot:
   url: "https://core.telegram.org/bots/faq"
   ua:

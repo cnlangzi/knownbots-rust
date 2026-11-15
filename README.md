@@ -314,10 +314,13 @@ is compiled into the crate.
 | pingdom | Pingdom | Monitor | Pingdom | list |
 | pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
 | redditbot | Reddit | SocialMedia | redditbot | dns |
+| rytebot | Semrush | SEO | RyteBot | dns |
 | semrushbot | Semrush | SEO | SemrushBot | dns |
 | semrushbot-ba | Semrush | SEO | SemrushBot-BA | dns |
+| siteauditbot | Semrush | SEO | SiteAuditBot | dns |
 | slackbot | Slack | SocialMedia | Slackbot | dns |
 | sogou | Sogou | SearchEngine | Sogou | dns |
+| splitsignalbot | Semrush | SEO | SplitSignalBot | dns |
 | telegrambot | Telegram | SocialMedia | TelegramBot | dns |
 | twitterbot | Twitter | SocialMedia | Twitterbot | dns |
 | uptimerobot | UptimeRobot | Monitor | UptimeRobot | list |
