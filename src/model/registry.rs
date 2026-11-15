@@ -166,6 +166,10 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
     ),
     ("mj12bot.yaml", include_str!("../../conf.d/mj12bot.yaml")),
     (
+        "mojeekbot.yaml",
+        include_str!("../../conf.d/mojeekbot.yaml"),
+    ),
+    (
         "oai-adsbot.yaml",
         include_str!("../../conf.d/oai-adsbot.yaml"),
     ),
@@ -417,6 +421,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         n if n.starts_with("semrush") => "Semrush",
         "ahrefsbot" => "Ahrefs",
         "mj12bot" => "Majestic",
+        "mojeekbot" => "Mojeek",
         "youbot" => "You.com",
         _ => "Unknown",
     }

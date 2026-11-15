@@ -88,7 +88,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 61, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 62, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -563,6 +563,33 @@ fn the_definition_of_the_crawler_of_you_com_holds_the_fields_the_vendor_publishe
     );
     let prefixes: Vec<String> = youbot.custom.iter().map(|net| net.to_string()).collect();
     assert_eq!(prefixes, ["68.67.112.0/24"]);
+}
+
+/// The definition of the crawler of Mojeek holds the fields the vendor
+/// publishes.
+///
+/// The vendor publishes an address space for the crawler and keeps the reverse
+/// DNS of its addresses, so the definition names both of them: the document is
+/// the fast path of the verification and the reverse DNS the second one.
+#[test]
+fn the_definition_of_the_crawler_of_mojeek_holds_the_fields_the_vendor_publishes() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let mojeek = bots
+        .iter()
+        .find(|bot| bot.name == "mojeekbot")
+        .expect("mojeekbot in the registry");
+    assert_eq!(mojeek.kind, BotKind::SearchEngine);
+    assert_eq!(mojeek.vendor, "Mojeek");
+    assert_eq!(mojeek.ua, "MojeekBot");
+    assert_eq!(mojeek.parser, "google");
+    assert_eq!(mojeek.urls, ["https://www.mojeek.com/mojeekbot.json"]);
+    assert!(mojeek.rdns, "the crawler carries no reverse DNS");
+    assert_eq!(mojeek.domains, ["mojeek.com"]);
+    assert!(
+        mojeek.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
 }
 
 #[test]
