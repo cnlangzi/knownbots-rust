@@ -1,6 +1,8 @@
 # Baiduspider - Baidu search crawler
 # https://help.baidu.com/question?prod_id=1&type=0
 # Verification: RDNS (no official IP list available)
+# The names of the crawler confirm for part of its addresses only: a request
+# from an address whose name does not confirm forward fails closed.
 kind: SearchEngine
 name: baiduspider
 vendor: "Baidu"
@@ -9,3 +11,4 @@ domains:
   - "baidu.com"
   - "baidu.jp"
 rdns: true
+sample: "220.181.108.94"
