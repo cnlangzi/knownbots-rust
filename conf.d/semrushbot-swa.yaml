@@ -1,0 +1,10 @@
+# Semrush SWA tool crawler
+# Official UA: SemrushBot-SWA
+# https://www.semrush.com/bot.html
+kind: SEO
+name: semrushbot-swa
+vendor: "Semrush"
+ua: "SemrushBot-SWA"
+rdns: true
+domains:
+  - "semrush.com"

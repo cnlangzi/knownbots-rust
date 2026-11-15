@@ -256,6 +256,26 @@ semrushbot-ba:
   url: "https://www.semrush.com/bot.html"
   ua:
     - "SemrushBot-BA"
+semrushbot-esi:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-ESI"
+semrushbot-ft:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-FT"
+semrushbot-ocob:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-OCOB"
+semrushbot-si:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-SI"
+semrushbot-swa:
+  url: "https://www.semrush.com/bot.html"
+  ua:
+    - "SemrushBot-SWA"
 siteauditbot:
   url: "https://www.semrush.com/bot.html"
   ua:

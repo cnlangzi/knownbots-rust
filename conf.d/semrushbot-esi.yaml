@@ -1,0 +1,10 @@
+# Semrush Enterprise Site Intelligence crawler
+# Official UA: SemrushBot-ESI
+# https://www.semrush.com/bot.html
+kind: SEO
+name: semrushbot-esi
+vendor: "Semrush"
+ua: "SemrushBot-ESI"
+rdns: true
+domains:
+  - "semrush.com"

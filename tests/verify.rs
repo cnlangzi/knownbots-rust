@@ -45,6 +45,14 @@ const DUCK_DUCK_UA: &str = "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot
 /// and the token `MojeekBot` — so the string below carries that token.
 const MOJEEK_UA: &str = "Mozilla/5.0 (compatible; MojeekBot; +https://www.mojeek.com/bot.html)";
 
+/// The User-Agent Semrush publishes for the crawler of its On Page SEO Checker.
+const SEMRUSH_SI_UA: &str =
+    "Mozilla/5.0 (compatible; SemrushBot-SI/0.97; +http://www.semrush.com/bot.html)";
+
+/// The User-Agent Semrush publishes for its main crawler.
+const SEMRUSH_UA: &str =
+    "Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)";
+
 #[test]
 fn a_claim_that_names_a_known_crawler_verifies_with_its_address() {
     let (_directory, validator) = validator();
@@ -586,4 +594,86 @@ fn the_mojeek_crawler_is_verified_by_its_list_and_by_its_reverse_dns() {
     let result = validator.verify(MOJEEK_UA, ip("203.0.113.7"));
     assert!(result.is_verified());
     assert_eq!(result.name, "mojeekbot");
+}
+
+/// The crawlers of Semrush are told apart by their markers.
+///
+/// The marker of the crawler of the On Page SEO Checker holds the marker of the
+/// main crawler of the vendor, so the longest marker has to claim the request —
+/// and the main crawler keeps the requests that carry its own marker.
+#[test]
+fn the_crawlers_of_semrush_are_told_apart_by_their_markers() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("semrushbot-si", "85.208.98.53", "2.si.bot.semrush.com")
+        .unwrap();
+    validator
+        .seed_rdns("semrushbot", "85.208.98.25", "1.lbt.bot.semrush.com")
+        .unwrap();
+
+    let si = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
+    assert!(si.is_verified());
+    assert_eq!(si.name, "semrushbot-si");
+    assert_eq!(si.vendor, "Semrush");
+
+    let main = validator.verify(SEMRUSH_UA, ip("85.208.98.25"));
+    assert!(main.is_verified());
+    assert_eq!(main.name, "semrushbot");
+    assert_eq!(main.vendor, "Semrush");
+}
+
+/// The seven crawlers of Semrush share one address space.
+///
+/// The vendor keeps the reverse DNS of all of its crawlers under
+/// `semrush.com`, so the address space of a crawler of Semrush is the address
+/// space of the vendor: the address decides whether a request may claim a
+/// crawler of Semrush at all, and the marker decides which one it claims to be.
+#[test]
+fn the_crawlers_of_semrush_share_the_address_space_of_their_vendor() {
+    let (_directory, validator) = validator();
+    for bot in [
+        "semrushbot",
+        "semrushbot-ba",
+        "semrushbot-esi",
+        "semrushbot-ft",
+        "semrushbot-ocob",
+        "semrushbot-si",
+        "semrushbot-swa",
+    ] {
+        validator
+            .seed_rdns(bot, "85.208.98.25", "1.lbt.bot.semrush.com")
+            .unwrap();
+    }
+
+    // The one address confirms a request that names any of the crawlers of the
+    // vendor.
+    for (name, marker) in [
+        ("semrushbot", "SemrushBot"),
+        ("semrushbot-ba", "SemrushBot-BA"),
+        ("semrushbot-esi", "SemrushBot-ESI"),
+        ("semrushbot-ft", "SemrushBot-FT"),
+        ("semrushbot-ocob", "SemrushBot-OCOB"),
+        ("semrushbot-si", "SemrushBot-SI"),
+        ("semrushbot-swa", "SemrushBot-SWA"),
+    ] {
+        let ua =
+            format!("Mozilla/5.0 (compatible; {marker}/1.0; +http://www.semrush.com/bot.html)");
+        let result = validator.verify(&ua, ip("85.208.98.25"));
+        assert!(result.is_verified());
+        assert_eq!(result.name, name);
+    }
+}
+
+/// A hostname outside the domains of the vendor does not confirm a Semrush
+/// crawler, even when the request names one.
+#[test]
+fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("semrushbot-si", "85.208.98.53", "2.si.bot.example.com")
+        .unwrap();
+
+    let result = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
 }
