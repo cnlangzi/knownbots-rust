@@ -626,7 +626,7 @@ fn the_crawlers_of_semrush_are_told_apart_by_their_markers() {
     assert_eq!(main.vendor, "Semrush");
 }
 
-/// The seven crawlers of Semrush share one address space.
+/// The six crawlers of Semrush share one address space.
 ///
 /// The vendor keeps the reverse DNS of all of its crawlers under
 /// `semrush.com`, so the address space of a crawler of Semrush is the address
@@ -638,11 +638,10 @@ fn the_crawlers_of_semrush_share_the_address_space_of_their_vendor() {
     for bot in [
         "semrushbot",
         "semrushbot-ba",
-        "semrushbot-esi",
-        "semrushbot-ft",
-        "semrushbot-ocob",
         "semrushbot-si",
         "semrushbot-swa",
+        "siteauditbot",
+        "splitsignalbot",
     ] {
         validator
             .seed_rdns(bot, "85.208.98.25", "1.lbt.bot.semrush.com")
@@ -654,11 +653,10 @@ fn the_crawlers_of_semrush_share_the_address_space_of_their_vendor() {
     for (name, marker) in [
         ("semrushbot", "SemrushBot"),
         ("semrushbot-ba", "SemrushBot-BA"),
-        ("semrushbot-esi", "SemrushBot-ESI"),
-        ("semrushbot-ft", "SemrushBot-FT"),
-        ("semrushbot-ocob", "SemrushBot-OCOB"),
         ("semrushbot-si", "SemrushBot-SI"),
         ("semrushbot-swa", "SemrushBot-SWA"),
+        ("siteauditbot", "SiteAuditBot"),
+        ("splitsignalbot", "SplitSignalBot"),
     ] {
         let ua =
             format!("Mozilla/5.0 (compatible; {marker}/1.0; +http://www.semrush.com/bot.html)");
@@ -680,6 +678,45 @@ fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
     let result = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
+}
+
+/// The registry carries no crawler for the tokens of the crawlers of Semrush
+/// whose traffic it can never verify.
+///
+/// The vendor publishes no address space for them and names no host of its own
+/// for their product, so a request that carries one of their tokens is never
+/// verified as the crawler it names.
+///
+/// `RyteBot` names no crawler of the registry, so the request is an ordinary
+/// request. The three tokens that begin with `SemrushBot` are words of the
+/// token of the main crawler — a hyphen is a boundary, so `SemrushBot-ESI`
+/// carries the word `SemrushBot` — so the main crawler claims the request and
+/// the address decides: a request from an address of the vendor is verified as
+/// the main crawler, and a request from any other address fails closed.
+#[test]
+fn a_claim_of_a_crawler_of_semrush_the_registry_does_not_carry_is_never_verified_as_it() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("semrushbot", "85.208.98.25", "1.lbt.bot.semrush.com")
+        .unwrap();
+    validator
+        .seed_rdns("semrushbot", "203.0.113.7", "203.0.113.7.example.com")
+        .unwrap();
+
+    let ryte = validator.verify("Mozilla/5.0 (compatible; RyteBot/1.0)", ip("203.0.113.7"));
+    assert_eq!(ryte.status, VerifyStatus::Unknown);
+    assert_eq!(ryte.name, "");
+
+    for token in ["SemrushBot-ESI", "SemrushBot-FT", "SemrushBot-OCOB"] {
+        let ua = format!("Mozilla/5.0 (compatible; {token}/1.0; +http://www.semrush.com/bot.html)");
+
+        let outside = validator.verify(&ua, ip("203.0.113.7"));
+        assert_eq!(outside.status, VerifyStatus::Failed);
+        assert_eq!(outside.name, "");
+
+        let inside = validator.verify(&ua, ip("85.208.98.25"));
+        assert_eq!(inside.name, "semrushbot");
+    }
 }
 
 /// The crawlers that are known only by their reverse DNS are verified by the

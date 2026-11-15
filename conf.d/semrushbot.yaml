@@ -8,3 +8,4 @@ ua: "SemrushBot"
 rdns: true
 domains:
   - "semrush.com"
+sample: "185.191.171.2"

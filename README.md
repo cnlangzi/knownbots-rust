@@ -189,7 +189,10 @@ never holds a lock that a background task holds for long.
    official markers are published in a fixed casing (`Googlebot`, never
    `googlebot`), and `MyGooglebot` does not match `Googlebot`. When several
    markers match, the **longest** one wins, so `AdsBot-Google-Mobile` is
-   preferred over `AdsBot`.
+   preferred over `AdsBot`. A token the registry does not carry is claimed by
+   the marker that contains it: `SemrushBot-ESI` carries the word `SemrushBot`,
+   so a request that carries it is claimed by the main crawler of the vendor and
+   is verified as it when the address belongs to the vendor.
 2. The address of the request has to fall into the address space of the matched
    crawler. The address space is the set of prefixes the vendor published, plus
    the prefixes the definition of the crawler states itself.
@@ -320,12 +323,8 @@ is compiled into the crate.
 | pingdom | Pingdom | Monitor | Pingdom | list |
 | pinterestbot | Pinterest | SocialMedia | Pinterestbot | dns |
 | redditbot | Reddit | SocialMedia | redditbot | dns |
-| rytebot | Semrush | SEO | RyteBot | dns |
 | semrushbot | Semrush | SEO | SemrushBot | dns |
 | semrushbot-ba | Semrush | SEO | SemrushBot-BA | dns |
-| semrushbot-esi | Semrush | SEO | SemrushBot-ESI | dns |
-| semrushbot-ft | Semrush | SEO | SemrushBot-FT | dns |
-| semrushbot-ocob | Semrush | SEO | SemrushBot-OCOB | dns |
 | semrushbot-si | Semrush | SEO | SemrushBot-SI | dns |
 | semrushbot-swa | Semrush | SEO | SemrushBot-SWA | dns |
 | seokicks | SEOkicks | SEO | SEOkicks | dns |
