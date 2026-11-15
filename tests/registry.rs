@@ -88,7 +88,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 61, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 66, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -563,6 +563,46 @@ fn the_definition_of_the_crawler_of_you_com_holds_the_fields_the_vendor_publishe
     );
     let prefixes: Vec<String> = youbot.custom.iter().map(|net| net.to_string()).collect();
     assert_eq!(prefixes, ["68.67.112.0/24"]);
+}
+
+/// The definitions of the crawlers of Semrush hold the fields the vendor
+/// publishes.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's.
+#[test]
+fn the_definitions_of_the_crawlers_of_semrush_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    for (name, marker) in [
+        ("semrushbot-esi", "SemrushBot-ESI"),
+        ("semrushbot-ft", "SemrushBot-FT"),
+        ("semrushbot-ocob", "SemrushBot-OCOB"),
+        ("semrushbot-si", "SemrushBot-SI"),
+        ("semrushbot-swa", "SemrushBot-SWA"),
+    ] {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(bot.kind, BotKind::SEO);
+        assert_eq!(bot.vendor, "Semrush");
+        assert_eq!(bot.ua, marker);
+        assert!(
+            bot.urls.is_empty(),
+            "the vendor publishes no address space for {name}"
+        );
+        assert!(
+            bot.rdns,
+            "the crawler {name} is verified by the reverse DNS of its vendor"
+        );
+        assert_eq!(bot.domains, ["semrush.com"]);
+        assert!(
+            bot.custom.is_empty(),
+            "the crawler {name} states no prefix of its own"
+        );
+    }
 }
 
 #[test]

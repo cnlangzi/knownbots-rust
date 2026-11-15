@@ -316,6 +316,11 @@ is compiled into the crate.
 | redditbot | Reddit | SocialMedia | redditbot | dns |
 | semrushbot | Semrush | SEO | SemrushBot | dns |
 | semrushbot-ba | Semrush | SEO | SemrushBot-BA | dns |
+| semrushbot-esi | Semrush | SEO | SemrushBot-ESI | dns |
+| semrushbot-ft | Semrush | SEO | SemrushBot-FT | dns |
+| semrushbot-ocob | Semrush | SEO | SemrushBot-OCOB | dns |
+| semrushbot-si | Semrush | SEO | SemrushBot-SI | dns |
+| semrushbot-swa | Semrush | SEO | SemrushBot-SWA | dns |
 | slackbot | Slack | SocialMedia | Slackbot | dns |
 | sogou | Sogou | SearchEngine | Sogou | dns |
 | telegrambot | Telegram | SocialMedia | TelegramBot | dns |

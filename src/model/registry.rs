@@ -196,6 +196,26 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         include_str!("../../conf.d/semrushbot-backlinks.yaml"),
     ),
     (
+        "semrushbot-esi.yaml",
+        include_str!("../../conf.d/semrushbot-esi.yaml"),
+    ),
+    (
+        "semrushbot-ft.yaml",
+        include_str!("../../conf.d/semrushbot-ft.yaml"),
+    ),
+    (
+        "semrushbot-ocob.yaml",
+        include_str!("../../conf.d/semrushbot-ocob.yaml"),
+    ),
+    (
+        "semrushbot-si.yaml",
+        include_str!("../../conf.d/semrushbot-si.yaml"),
+    ),
+    (
+        "semrushbot-swa.yaml",
+        include_str!("../../conf.d/semrushbot-swa.yaml"),
+    ),
+    (
         "semrushbot.yaml",
         include_str!("../../conf.d/semrushbot.yaml"),
     ),

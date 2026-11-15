@@ -1,0 +1,10 @@
+# Semrush On Page SEO Checker crawler
+# Official UA: SemrushBot-SI
+# https://www.semrush.com/bot.html
+kind: SEO
+name: semrushbot-si
+vendor: "Semrush"
+ua: "SemrushBot-SI"
+rdns: true
+domains:
+  - "semrush.com"

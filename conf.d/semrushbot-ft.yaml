@@ -1,0 +1,10 @@
+# Semrush Plagiarism Checker crawler
+# Official UA: SemrushBot-FT
+# https://www.semrush.com/bot.html
+kind: SEO
+name: semrushbot-ft
+vendor: "Semrush"
+ua: "SemrushBot-FT"
+rdns: true
+domains:
+  - "semrush.com"

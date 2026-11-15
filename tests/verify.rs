@@ -39,6 +39,14 @@ const DUCK_ASSIST_UA: &str = "DuckAssistBot/1.2; (+http://duckduckgo.com/duckass
 /// search index.
 const DUCK_DUCK_UA: &str = "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)";
 
+/// The User-Agent Semrush publishes for the crawler of its On Page SEO Checker.
+const SEMRUSH_SI_UA: &str =
+    "Mozilla/5.0 (compatible; SemrushBot-SI/0.97; +http://www.semrush.com/bot.html)";
+
+/// The User-Agent Semrush publishes for its main crawler.
+const SEMRUSH_UA: &str =
+    "Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)";
+
 #[test]
 fn a_claim_that_names_a_known_crawler_verifies_with_its_address() {
     let (_directory, validator) = validator();
@@ -512,4 +520,44 @@ fn the_two_crawlers_of_duckduck_go_are_told_apart_by_their_markers() {
 
     let search = validator.verify(DUCK_DUCK_UA, ip("104.43.54.127"));
     assert_eq!(search.name, "duckduckbot");
+}
+
+/// The crawlers of Semrush are told apart by their markers.
+///
+/// The marker of the crawler of the On Page SEO Checker holds the marker of the
+/// main crawler of the vendor, so the longest marker has to claim the request —
+/// and the main crawler keeps the requests that carry its own marker.
+#[test]
+fn the_crawlers_of_semrush_are_told_apart_by_their_markers() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("semrushbot-si", "85.208.98.53", "2.si.bot.semrush.com")
+        .unwrap();
+    validator
+        .seed_rdns("semrushbot", "85.208.98.25", "1.lbt.bot.semrush.com")
+        .unwrap();
+
+    let si = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
+    assert!(si.is_verified());
+    assert_eq!(si.name, "semrushbot-si");
+    assert_eq!(si.vendor, "Semrush");
+
+    let main = validator.verify(SEMRUSH_UA, ip("85.208.98.25"));
+    assert!(main.is_verified());
+    assert_eq!(main.name, "semrushbot");
+    assert_eq!(main.vendor, "Semrush");
+}
+
+/// A hostname outside the domains of the vendor does not confirm a Semrush
+/// crawler, even when the request names one.
+#[test]
+fn a_semrush_claim_from_an_address_outside_the_domains_fails_closed() {
+    let (_directory, validator) = validator();
+    validator
+        .seed_rdns("semrushbot-si", "85.208.98.53", "2.si.bot.example.com")
+        .unwrap();
+
+    let result = validator.verify(SEMRUSH_SI_UA, ip("85.208.98.53"));
+    assert_eq!(result.status, VerifyStatus::Failed);
+    assert!(!result.is_verified());
 }
