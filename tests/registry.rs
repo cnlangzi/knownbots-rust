@@ -4,6 +4,7 @@
 mod common;
 
 use std::collections::HashSet;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 
 use common::{Source, Sources};
@@ -563,6 +564,87 @@ fn the_definition_of_the_crawler_of_you_com_holds_the_fields_the_vendor_publishe
     );
     let prefixes: Vec<String> = youbot.custom.iter().map(|net| net.to_string()).collect();
     assert_eq!(prefixes, ["68.67.112.0/24"]);
+}
+
+/// The definition of the crawler of ByteDance holds the fields the vendor
+/// publishes.
+///
+/// The vendor publishes the address space of the crawler as ten networks and
+/// keeps the reverse names of its addresses, but the names never confirm
+/// forward — the crate cannot verify the crawler by them, so the definition
+/// holds the networks the vendor publishes. A definition that named the reverse
+/// DNS would carry a name that matches traffic the crate can never verify.
+#[test]
+fn the_definition_of_the_crawler_of_bytedance_holds_the_fields_the_vendor_publishes() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let bytespider = bots
+        .iter()
+        .find(|bot| bot.name == "bytespider")
+        .expect("bytespider in the registry");
+    assert_eq!(bytespider.kind, BotKind::AITraining);
+    assert_eq!(bytespider.vendor, "ByteDance");
+    assert_eq!(bytespider.ua, "Bytespider");
+    assert!(
+        bytespider.urls.is_empty(),
+        "the vendor publishes no machine-readable list of the address space"
+    );
+    assert!(
+        !bytespider.rdns,
+        "the reverse names of the crawler never confirm forward"
+    );
+    assert!(
+        bytespider.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    let prefixes: Vec<String> = bytespider
+        .custom
+        .iter()
+        .map(|net| net.to_string())
+        .collect();
+    assert_eq!(
+        prefixes,
+        [
+            "110.249.201.0/24",
+            "110.249.202.0/24",
+            "111.225.148.0/24",
+            "111.225.149.0/24",
+            "220.243.135.0/24",
+            "220.243.136.0/24",
+            "220.243.188.0/24",
+            "220.243.189.0/24",
+            "60.8.123.0/24",
+            "60.8.151.0/24",
+        ]
+    );
+}
+
+/// The definition of the crawler of Baidu states the sample it was confirmed
+/// with.
+///
+/// The vendor publishes no address list for the crawler, so the reverse names of
+/// its addresses are the only path to it. The sample is the address a reverse
+/// name confirmed forward to, and the health check judges the crawler by it.
+#[test]
+fn the_definition_of_the_crawler_of_baidu_states_the_sample_it_was_confirmed_with() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let baiduspider = bots
+        .iter()
+        .find(|bot| bot.name == "baiduspider")
+        .expect("baiduspider in the registry");
+    assert_eq!(baiduspider.kind, BotKind::SearchEngine);
+    assert_eq!(baiduspider.vendor, "Baidu");
+    assert_eq!(baiduspider.ua, "Baiduspider");
+    assert!(
+        baiduspider.rdns,
+        "the crawler is verified by the reverse DNS of its vendor"
+    );
+    assert_eq!(baiduspider.domains, ["baidu.com", "baidu.jp"]);
+    assert_eq!(
+        baiduspider.sample,
+        Some("220.181.108.94".parse::<IpAddr>().unwrap())
+    );
 }
 
 #[test]
