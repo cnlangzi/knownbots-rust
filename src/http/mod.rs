@@ -36,10 +36,12 @@ pub fn user_agent() -> String {
 /// it verifies the certificate of the endpoint it talks to.
 ///
 /// The client resolves a host through the resolver of the crate, which puts the
-/// IPv4 addresses of the host first. The stack races the addresses of a host
-/// and prefers the family of the first one, so the order of the addresses
-/// decides which path to the vendor is taken — a path that is tampered with
-/// answers with a document that is not the list of the vendor.
+/// IPv4 addresses of the host first. The stack splits the addresses of a host
+/// into two groups by the family of the first one and connects the first group
+/// first; the second group starts 300 ms later, and the two groups are raced
+/// against each other. The order of the addresses therefore decides which path
+/// to the vendor is taken — a path that is tampered with answers with a
+/// document that is not the list of the vendor.
 pub fn build_client() -> Result<reqwest::Client, ConfigError> {
     reqwest::Client::builder()
         .connect_timeout(CONNECT_TIMEOUT)
@@ -154,31 +156,23 @@ mod tests {
         assert!(ipv4_first(&addrs).iter().all(|addr| addr.is_ipv6()));
     }
 
-    /// The resolver of the crate answers with the addresses of the host, the
-    /// IPv4 ones first.
+    /// The resolver of the crate answers with the addresses of the host.
     ///
-    /// The lookup of the host is a lookup of the loopback — the test reaches no
-    /// network.
+    /// The host is a literal, so the lookup of the test is answered by the
+    /// resolver of the system itself — the test reaches no network.
     #[tokio::test]
-    async fn the_resolver_answers_with_the_ipv4_addresses_first() {
+    async fn the_resolver_answers_with_the_addresses_of_the_host() {
         use reqwest::dns::Resolve;
         use std::str::FromStr;
 
-        let name = reqwest::dns::Name::from_str("localhost").expect("the name of a host");
+        let name = reqwest::dns::Name::from_str("127.0.0.1").expect("the name of a host");
         let addrs = PreferIpv4
             .resolve(name)
             .await
             .expect("the addresses of the host")
             .collect::<Vec<SocketAddr>>();
         assert!(!addrs.is_empty(), "the host must have addresses");
-
-        let first_ipv6 = addrs.iter().position(|addr| addr.is_ipv6());
-        let last_ipv4 = addrs.iter().rposition(|addr| addr.is_ipv4());
-        if let (Some(first_ipv6), Some(last_ipv4)) = (first_ipv6, last_ipv4) {
-            assert!(
-                last_ipv4 < first_ipv6,
-                "the IPv4 addresses come first: {addrs:?}"
-            );
-        }
+        assert!(addrs.iter().all(|addr| addr.is_ipv4()), "{addrs:?}");
+        assert!(addrs.iter().all(|addr| addr.port() == 0), "{addrs:?}");
     }
 }

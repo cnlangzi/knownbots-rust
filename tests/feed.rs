@@ -6,7 +6,7 @@
 
 use std::io::Write;
 use std::net::IpAddr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use knownbots::{BotRefreshState, RefreshFailure, Validator, ValidatorOptions};
 use wiremock::matchers::{header, method, path};
@@ -17,48 +17,6 @@ fn gzip(body: &[u8]) -> Vec<u8> {
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
     encoder.write_all(body).expect("the body must be written");
     encoder.finish().expect("the body must be finished")
-}
-
-/// The fields of the events the crate emits, kept for the assertions.
-#[derive(Clone, Default)]
-struct Warnings(Arc<Mutex<Vec<String>>>);
-
-impl tracing::Subscriber for Warnings {
-    fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
-        true
-    }
-
-    fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
-        tracing::span::Id::from_u64(1)
-    }
-
-    fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
-
-    fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
-
-    fn event(&self, event: &tracing::Event<'_>) {
-        if !event.metadata().target().starts_with("knownbots") {
-            return;
-        }
-        let mut visitor = Visitor(self.0.clone());
-        event.record(&mut visitor);
-    }
-
-    fn enter(&self, _: &tracing::span::Id) {}
-
-    fn exit(&self, _: &tracing::span::Id) {}
-}
-
-/// The fields of one event, as strings.
-struct Visitor(Arc<Mutex<Vec<String>>>);
-
-impl tracing::field::Visit for Visitor {
-    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
-        self.0
-            .lock()
-            .expect("the lock of the warnings")
-            .push(format!("{}={value:?}", field.name()));
-    }
 }
 
 /// A validator whose registry holds one crawler that reads its list from the
@@ -347,43 +305,31 @@ async fn a_body_that_is_not_the_list_names_the_answer_of_the_endpoint() {
     );
 }
 
-/// The failure of the refresh of one crawler is logged with the crawler and
-/// the reason.
+/// The message of a refusal carries an excerpt of the body, not the body.
 #[tokio::test]
-async fn a_failed_refresh_of_one_bot_is_logged() {
+async fn the_message_of_a_refusal_carries_an_excerpt() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/ips.json"))
-        .respond_with(ResponseTemplate::new(403))
+        .respond_with(ResponseTemplate::new(403).set_body_raw(vec![b'x'; 100_000], "text/plain"))
         .mount(&server)
         .await;
 
     let (_directory, validator) = validator_for(&server, "google").await;
-    let warnings = Warnings::default();
-    let captured = warnings.0.clone();
-    let _guard = tracing::subscriber::set_default(warnings);
-    let failure = validator.refresh_bot("testbot").await;
-    drop(_guard);
-
-    let failure = failure.expect("the refresh must fail");
+    let failure = validator
+        .refresh_bot("testbot")
+        .await
+        .expect("the refresh must fail");
     assert!(
         matches!(failure, RefreshFailure::Unreachable(_)),
         "{failure:?}"
     );
-    let entries = captured.lock().expect("the lock of the warnings").clone();
+
+    let message = failure.to_string();
+    assert!(message.contains(&server.uri()), "{message}");
     assert!(
-        entries.iter().any(|entry| entry.contains("bot=testbot")),
-        "{entries:?}"
-    );
-    assert!(
-        entries
-            .iter()
-            .any(|entry| entry.contains("failure=unreachable")),
-        "{entries:?}"
-    );
-    assert!(
-        entries.iter().any(|entry| entry.contains("403")),
-        "{entries:?}"
+        message.len() < 256,
+        "the message carries an excerpt: {message}"
     );
 }
 

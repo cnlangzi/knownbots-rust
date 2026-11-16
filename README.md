@@ -522,10 +522,12 @@ is decoded, and it is read by the parser of the crawler. The crate decodes the
 bodies that are compressed with gzip, brotli, zstd or deflate.
 
 The client the crate builds prefers the IPv4 addresses of a host and falls back
-to the IPv6 ones: the stack races the addresses of a host and prefers the
-family of the first one, so the order of the addresses decides which path to
-the vendor is taken. A host that supplies a client of its own keeps its own
-choice of the address family — the crate does not touch it.
+to the IPv6 ones: the stack splits the addresses of a host into two groups by
+the family of the first one and connects the first group first — the second
+group starts 300 ms later, and the two groups are raced against each other —
+so the order of the addresses decides which path to the vendor is taken. A host
+that supplies a client of its own keeps its own choice of the address family —
+the crate does not touch it.
 
 The two failures of a download are told apart, because the two mean different
 things:
