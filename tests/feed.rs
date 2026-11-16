@@ -149,6 +149,9 @@ async fn a_document_without_its_list_is_broken() {
         .await
         .expect("the refresh must fail");
     assert!(matches!(failure, RefreshFailure::Broken(_)), "{failure:?}");
+    // The message names the list whose shape changed.
+    let message = failure.to_string();
+    assert!(message.contains(&server.uri()), "{message}");
 }
 
 /// One entry that holds no usable prefix does not discard the document.
@@ -239,6 +242,94 @@ async fn a_refusal_is_unreachable() {
     assert!(
         matches!(failure, RefreshFailure::Unreachable(_)),
         "{failure:?}"
+    );
+}
+
+/// A status that is not 200 is a refusal of the endpoint, and the message
+/// names what the endpoint answered.
+#[tokio::test]
+async fn a_status_that_is_not_200_names_the_answer_of_the_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(ResponseTemplate::new(203).set_body_raw("OK", "text/xml"))
+        .mount(&server)
+        .await;
+
+    let (_directory, validator) = validator_for(&server, "google").await;
+    let failure = validator
+        .refresh_bot("testbot")
+        .await
+        .expect("the refresh must fail");
+    assert!(
+        matches!(failure, RefreshFailure::Unreachable(_)),
+        "{failure:?}"
+    );
+
+    let message = failure.to_string();
+    assert!(message.contains(&server.uri()), "{message}");
+    assert!(message.contains("203"), "{message}");
+    assert!(message.contains("text/xml"), "{message}");
+}
+
+/// A body that is not the list of the vendor is a refusal of the endpoint, and
+/// the message names the content type and the beginning of the body.
+#[tokio::test]
+async fn a_body_that_is_not_the_list_names_the_answer_of_the_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_raw("<html><body>Service unavailable</body></html>", "text/html"),
+        )
+        .mount(&server)
+        .await;
+
+    let (_directory, validator) = validator_for(&server, "google").await;
+    let failure = validator
+        .refresh_bot("testbot")
+        .await
+        .expect("the refresh must fail");
+    assert!(
+        matches!(failure, RefreshFailure::Unreachable(_)),
+        "{failure:?}"
+    );
+
+    let message = failure.to_string();
+    assert!(message.contains(&server.uri()), "{message}");
+    assert!(message.contains("text/html"), "{message}");
+    assert!(
+        message.contains("<html><body>Service unavailable"),
+        "{message}"
+    );
+}
+
+/// The message of a refusal carries an excerpt of the body, not the body.
+#[tokio::test]
+async fn the_message_of_a_refusal_carries_an_excerpt() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(ResponseTemplate::new(403).set_body_raw(vec![b'x'; 100_000], "text/plain"))
+        .mount(&server)
+        .await;
+
+    let (_directory, validator) = validator_for(&server, "google").await;
+    let failure = validator
+        .refresh_bot("testbot")
+        .await
+        .expect("the refresh must fail");
+    assert!(
+        matches!(failure, RefreshFailure::Unreachable(_)),
+        "{failure:?}"
+    );
+
+    let message = failure.to_string();
+    assert!(message.contains(&server.uri()), "{message}");
+    assert!(
+        message.len() < 256,
+        "the message carries an excerpt: {message}"
     );
 }
 

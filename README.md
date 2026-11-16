@@ -521,6 +521,14 @@ The download of a published list is not a single step: the body is fetched, it
 is decoded, and it is read by the parser of the crawler. The crate decodes the
 bodies that are compressed with gzip, brotli, zstd or deflate.
 
+The client the crate builds prefers the IPv4 addresses of a host and falls back
+to the IPv6 ones: the stack splits the addresses of a host into two groups by
+the family of the first one and connects the first group first — the second
+group starts 300 ms later, and the two groups are raced against each other —
+so the order of the addresses decides which path to the vendor is taken. A host
+that supplies a client of its own keeps its own choice of the address family —
+the crate does not touch it.
+
 The two failures of a download are told apart, because the two mean different
 things:
 
@@ -534,6 +542,10 @@ A body that is not a JSON document at all — an error page, an empty body — i
 document that lost its top-level key is `Broken`: the shape of the list changed
 and the crate has to follow it. A list that holds no usable prefix at all is
 `Broken` as well — the document was read, but it yielded nothing.
+
+A refusal names what the endpoint answered: the status, the content type and
+the first bytes of the body. A status other than 200 is a refusal of the
+endpoint, not a document the crate mis-reads.
 
 An entry of a list that holds no usable prefix is skipped; the other entries of
 the document still count. A crawler whose refresh failed keeps the prefixes it
