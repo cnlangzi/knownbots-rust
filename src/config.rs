@@ -37,6 +37,10 @@ pub struct ValidatorOptions {
     /// store, supplies a client of its own — built with
     /// [`HttpClient`](crate::HttpClient), so that it needs no dependency of
     /// its own.
+    ///
+    /// The client of the crate prefers the IPv4 addresses of a host and falls
+    /// back to the IPv6 ones. A client of the host keeps its own choice of the
+    /// address family — the crate does not touch it.
     #[cfg(feature = "full")]
     pub http_client: Option<crate::HttpClient>,
 }

@@ -451,6 +451,11 @@ impl Validator {
                 self.refresh_errors.lock().remove(name);
                 let path = self.root.join(&bot.name).join("ips.txt");
                 if let Err(error) = bot.persist_ips(&path) {
+                    tracing::warn!(
+                        bot = %name,
+                        %error,
+                        "knownbots: the prefixes could not be persisted"
+                    );
                     let failure = RefreshFailure::Broken(format!("persist ips: {error}"));
                     self.refresh_errors
                         .lock()
@@ -460,6 +465,7 @@ impl Validator {
                 None
             }
             Some(failure) => {
+                tracing::warn!(bot = %name, %failure, "knownbots: the list could not be refreshed");
                 self.refresh_errors
                     .lock()
                     .insert(name.to_string(), failure.clone());
