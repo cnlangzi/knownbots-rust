@@ -975,10 +975,34 @@ mod tests {
         let _ = std::fs::remove_file(&path);
     }
 
-    /// The failure of a download carries the URL without its query and without
+    /// The failure of a transport failure carries the URL without its query
+    /// and without its fragment.
+    ///
+    /// The error of the request carries the URL of the request — the query
+    /// and the fragment included — so the crate builds its own description of
+    /// it.
+    #[tokio::test]
+    async fn the_failure_of_a_transport_failure_carries_no_query_and_no_fragment() {
+        let (ipv4, _ipv6) = stubs(None, None).await;
+        let transport = Transport::new(clients());
+        let url = format!(
+            "http://vendor.test:{}/ips.json?token=secret#part",
+            ipv4.port
+        );
+
+        let downloaded = transport.download("google", &[url]).await;
+
+        let failure = downloaded.failure.expect("the refresh must fail");
+        let message = failure.to_string();
+        assert!(message.contains("ips.json"), "{message}");
+        assert!(!message.contains("token=secret"), "{message}");
+        assert!(!message.contains("#part"), "{message}");
+    }
+
+    /// The failure of a refusal carries the URL without its query and without
     /// its fragment, so that a token of the host does not reach the log.
     #[tokio::test]
-    async fn the_failure_carries_no_query_and_no_fragment() {
+    async fn the_failure_of_a_refusal_carries_no_query_and_no_fragment() {
         let (ipv4, _ipv6) = stubs(Some(forbidden()), None).await;
         let transport = Transport::new(clients());
         let url = format!(

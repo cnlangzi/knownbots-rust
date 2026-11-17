@@ -1,5 +1,6 @@
 //! The HTTP clients of the crate and the classification of its failures.
 
+use std::error::Error;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::time::Duration;
 
@@ -128,11 +129,59 @@ fn build_client(local: Option<IpAddr>) -> Result<reqwest::Client, ConfigError> {
 /// A connect error or a timeout is the environment: the host is down, or the
 /// runner has no route to it. Every other failure — a handshake failure above
 /// all — points at the client of this crate.
+///
+/// The URL of the message is the one of the caller: it carries neither a query
+/// nor a fragment.
 pub fn map_transport_error(error: &reqwest::Error, url: &str) -> RefreshFailure {
+    let message = format!("{url}: {}", describe(error));
     if error.is_connect() || error.is_timeout() {
-        RefreshFailure::Unreachable(format!("{url}: {error}"))
+        RefreshFailure::Unreachable(message)
     } else {
-        RefreshFailure::Broken(format!("{url}: {error}"))
+        RefreshFailure::Broken(message)
+    }
+}
+
+/// The description of a transport failure.
+///
+/// The description of the error of `reqwest` carries the URL of the request —
+/// the query and the fragment included — so the crate builds its own: the
+/// kind of the failure and the chain of its causes.
+fn describe(error: &reqwest::Error) -> String {
+    let mut description = kind(error).to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        description.push_str(": ");
+        description.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    description
+}
+
+/// The kind of a transport failure.
+///
+/// The names are the ones of `reqwest`, without the URL that its own
+/// description appends.
+fn kind(error: &reqwest::Error) -> &'static str {
+    if error.is_builder() {
+        "builder error"
+    } else if error.is_request() {
+        "error sending request"
+    } else if error.is_body() {
+        "request or response body error"
+    } else if error.is_decode() {
+        "error decoding response body"
+    } else if error.is_redirect() {
+        "error following redirect"
+    } else if error.is_upgrade() {
+        "error upgrading connection"
+    } else if error.is_status() {
+        "HTTP status error"
+    } else if error.is_timeout() {
+        "the request timed out"
+    } else if error.is_connect() {
+        "error connecting to the endpoint"
+    } else {
+        "error of the request"
     }
 }
 
@@ -190,6 +239,36 @@ mod tests {
             .await
             .expect_err("the IPv6 client reaches no IPv4 address");
         assert!(error.is_connect(), "{error}");
+    }
+
+    /// The message of a transport failure names the URL of the crate and not
+    /// the URL of the request, which carries the query and the fragment.
+    #[tokio::test]
+    async fn the_message_of_a_transport_failure_carries_no_url_of_the_request() {
+        let listener =
+            std::net::TcpListener::bind("127.0.0.1:0").expect("the listener of the test");
+        let port = listener
+            .local_addr()
+            .expect("the address of the listener")
+            .port();
+        drop(listener);
+
+        let error = reqwest::Client::builder()
+            .no_proxy()
+            .build()
+            .expect("the client")
+            .get(format!(
+                "http://127.0.0.1:{port}/ips.json?token=secret#part"
+            ))
+            .send()
+            .await
+            .expect_err("the port answers nothing");
+
+        let failure = map_transport_error(&error, &format!("http://127.0.0.1:{port}/ips.json"));
+        let message = failure.to_string();
+        assert!(message.contains("ips.json"), "{message}");
+        assert!(!message.contains("token=secret"), "{message}");
+        assert!(!message.contains("#part"), "{message}");
     }
 
     /// The family of an address is the family it belongs to.
