@@ -30,19 +30,20 @@ pub struct ValidatorOptions {
     /// the outcome before it serves traffic — turns this off; the worker then
     /// keeps them fresh from the first interval on.
     pub refresh_on_start: bool,
-    /// The client the published lists are downloaded with.
+    /// The clients the published lists are downloaded with.
     ///
-    /// The crate builds a client of its own when the host supplies none. A host
+    /// The crate builds a set of its own when the host supplies none. A host
     /// that reaches the vendors through a proxy, or that trusts its own root
-    /// store, supplies a client of its own — built with
-    /// [`HttpClient`](crate::HttpClient), so that it needs no dependency of
-    /// its own.
+    /// store, builds the three clients itself — with the `reqwest` the crate
+    /// re-exports, so that it needs no dependency of its own — and hands them
+    /// over as a set.
     ///
-    /// The client of the crate prefers the IPv4 addresses of a host and falls
-    /// back to the IPv6 ones. A client of the host keeps its own choice of the
-    /// address family — the crate does not touch it.
+    /// The crate binds a client to an address family, so that a download that
+    /// was refused can be repeated over the other family. A host that brings
+    /// its own transport hands over the whole set, so that its own settings
+    /// apply to every attempt.
     #[cfg(feature = "full")]
-    pub http_client: Option<crate::HttpClient>,
+    pub client_set: Option<crate::ClientSet>,
 }
 
 impl Default for ValidatorOptions {
@@ -53,7 +54,7 @@ impl Default for ValidatorOptions {
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
             refresh_on_start: true,
             #[cfg(feature = "full")]
-            http_client: None,
+            client_set: None,
         }
     }
 }
@@ -65,7 +66,7 @@ pub(crate) struct Config {
     pub(crate) refresh_interval: Duration,
     pub(crate) refresh_on_start: bool,
     #[cfg(feature = "full")]
-    pub(crate) http_client: Option<crate::HttpClient>,
+    pub(crate) client_set: Option<crate::ClientSet>,
 }
 
 impl From<ValidatorOptions> for Config {
@@ -76,7 +77,7 @@ impl From<ValidatorOptions> for Config {
             refresh_interval: options.refresh_interval,
             refresh_on_start: options.refresh_on_start,
             #[cfg(feature = "full")]
-            http_client: options.http_client,
+            client_set: options.client_set,
         }
     }
 }

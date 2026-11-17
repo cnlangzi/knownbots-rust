@@ -7,9 +7,9 @@
 mod parsers;
 
 #[cfg(feature = "full")]
-mod download;
+mod transport;
 
 pub use parsers::{is_known_parser, parse};
 
 #[cfg(feature = "full")]
-pub use download::{Downloaded, download_prefixes};
+pub use transport::{Downloaded, Transport};

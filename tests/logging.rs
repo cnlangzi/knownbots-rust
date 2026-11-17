@@ -14,6 +14,9 @@ use knownbots::{RefreshFailure, Validator, ValidatorOptions};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
+#[path = "common/net.rs"]
+mod net;
+
 /// The fields of the events the crate emits, kept for the assertions.
 #[derive(Clone, Default)]
 struct Warnings {
@@ -126,6 +129,99 @@ async fn a_failed_refresh_of_one_bot_is_logged() {
     );
     assert!(
         entries.iter().any(|entry| entry.contains("403")),
+        "{entries:?}"
+    );
+}
+
+/// A refusal that the repetition over the other address family repaired is
+/// logged with what the endpoint answered.
+#[tokio::test]
+async fn a_repaired_refusal_is_logged() {
+    let server = net::server().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(net::LIST),
+        )
+        .mount(&server)
+        .await;
+
+    let directory = tempfile::tempdir().expect("a temporary directory");
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).expect("the override directory");
+    let port = server.address().port();
+    std::fs::write(
+        conf.join("testbot.yaml"),
+        format!(
+            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}?token=secret#part\"\n",
+            net::url(port)
+        ),
+    )
+    .expect("the definition");
+
+    let validator = Validator::new(ValidatorOptions {
+        root: directory.path().to_path_buf(),
+        client_set: Some(net::clients()),
+        ..ValidatorOptions::default()
+    })
+    .expect("a validator");
+
+    // The first download delivers the list, and the family that delivered it
+    // is remembered for the host.
+    assert!(validator.refresh_bot("testbot").await.is_none());
+
+    // The endpoint refuses the next download: the first answer is a refusal,
+    // the second one is the list.
+    server.reset().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(ResponseTemplate::new(203).set_body_raw("OK", "text/xml"))
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(net::LIST),
+        )
+        .mount(&server)
+        .await;
+
+    let warnings = Warnings::default();
+    let _guard = tracing::subscriber::set_default(warnings.clone());
+    let failure = validator.refresh_bot("testbot").await;
+    drop(_guard);
+
+    assert!(failure.is_none(), "{failure:?}");
+
+    let entries = warnings.captured();
+    assert!(
+        entries.iter().any(|entry| entry.contains("status=203")),
+        "{entries:?}"
+    );
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.contains("content_type=text/xml")),
+        "{entries:?}"
+    );
+    assert!(
+        entries.iter().any(|entry| entry.contains("excerpt=OK")),
+        "{entries:?}"
+    );
+    // The URL of the log carries neither a query nor a fragment.
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.contains(&format!("url=http://{}:{port}/ips.json", net::HOST))),
+        "{entries:?}"
+    );
+    assert!(
+        !entries.iter().any(|entry| entry.contains("token=secret")),
         "{entries:?}"
     );
 }

@@ -12,6 +12,9 @@ use knownbots::{BotRefreshState, RefreshFailure, Validator, ValidatorOptions};
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
+#[path = "common/net.rs"]
+mod net;
+
 /// Compresses a body the way a vendor that serves a gzip encoded list does.
 fn gzip(body: &[u8]) -> Vec<u8> {
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
@@ -521,9 +524,9 @@ async fn the_prefixes_of_the_documents_that_answered_are_kept() {
     assert_eq!(prefix_count(&validator), 1);
 }
 
-/// The client of the host is the client the crate downloads the lists with.
+/// The clients of the host are the clients the crate downloads the lists with.
 #[tokio::test]
-async fn the_client_of_the_host_is_used() {
+async fn the_clients_of_the_host_are_used() {
     use knownbots::reqwest::header::HeaderMap;
 
     let server = MockServer::start().await;
@@ -552,14 +555,15 @@ async fn the_client_of_the_host_is_used() {
 
     let mut headers = HeaderMap::new();
     headers.insert("x-knownbots", "yes".parse().expect("a header value"));
-    let client = knownbots::HttpClient::builder()
+    let client = knownbots::reqwest::Client::builder()
         .default_headers(headers)
         .build()
         .expect("a client");
+    let clients = knownbots::ClientSet::new(client.clone(), client.clone(), client.clone());
 
     let validator = Validator::new(ValidatorOptions {
         root: directory.path().to_path_buf(),
-        http_client: Some(client),
+        client_set: Some(clients),
         ..ValidatorOptions::default()
     })
     .expect("a validator");
@@ -568,4 +572,74 @@ async fn the_client_of_the_host_is_used() {
     // there, so a list means that the client of the host was used.
     assert!(validator.refresh_bot("testbot").await.is_none());
     assert_eq!(prefix_count(&validator), 1);
+}
+
+/// A document that the endpoint refused is downloaded again over the other
+/// address family, and the list of the second answer is kept.
+#[tokio::test]
+async fn a_refused_document_is_repaired_over_the_other_family() {
+    let server = net::server().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(net::LIST),
+        )
+        .mount(&server)
+        .await;
+
+    let directory = tempfile::tempdir().expect("a temporary directory");
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).expect("the override directory");
+    std::fs::write(
+        conf.join("testbot.yaml"),
+        format!(
+            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}\"\n",
+            net::url(server.address().port())
+        ),
+    )
+    .expect("the definition");
+
+    let validator = Validator::new(ValidatorOptions {
+        root: directory.path().to_path_buf(),
+        client_set: Some(net::clients()),
+        ..ValidatorOptions::default()
+    })
+    .expect("a validator");
+
+    // The first download delivers the list, and the family that delivered it
+    // is remembered for the host.
+    assert!(validator.refresh_bot("testbot").await.is_none());
+    assert_eq!(prefix_count(&validator), 1);
+
+    // The endpoint refuses the next download: the first answer is a refusal,
+    // the second one is the list.
+    server.reset().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(ResponseTemplate::new(203).set_body_raw("OK", "text/xml"))
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(net::LIST),
+        )
+        .mount(&server)
+        .await;
+
+    assert!(validator.refresh_bot("testbot").await.is_none());
+    assert_eq!(prefix_count(&validator), 1);
+
+    // The endpoint was asked twice: once over the family that refused, and
+    // once over the other one.
+    let requests = server
+        .received_requests()
+        .await
+        .expect("the requests of the server");
+    assert_eq!(requests.len(), 2, "{requests:?}");
 }

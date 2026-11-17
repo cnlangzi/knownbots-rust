@@ -1,17 +1,9 @@
-//! The HTTP client of the crate and the classification of its failures.
+//! The HTTP clients of the crate and the classification of its failures.
 
-use std::net::{IpAddr, SocketAddr};
-use std::sync::Arc;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::time::Duration;
 
 use crate::error::{ConfigError, RefreshFailure};
-
-/// The HTTP client the crate downloads the lists with.
-///
-/// The crate re-exports the type, so that a host that supplies a client of its
-/// own does not have to depend on `reqwest` itself — and cannot end up with a
-/// second copy of it.
-pub use reqwest::Client as HttpClient;
 
 /// The HTTP stack of the crate.
 ///
@@ -30,60 +22,105 @@ pub fn user_agent() -> String {
     format!("knownbots/{}", env!("CARGO_PKG_VERSION"))
 }
 
-/// Builds the HTTP client the crate downloads the lists with.
-///
-/// The client uses rustls, so the crate builds without a system TLS stack, and
-/// it verifies the certificate of the endpoint it talks to.
-///
-/// The client resolves a host through the resolver of the crate, which puts the
-/// IPv4 addresses of the host first. The stack splits the addresses of a host
-/// into two groups by the family of the first one and connects the first group
-/// first; the second group starts 300 ms later, and the two groups are raced
-/// against each other. The order of the addresses therefore decides which path
-/// to the vendor is taken — a path that is tampered with answers with a
-/// document that is not the list of the vendor.
-pub fn build_client() -> Result<reqwest::Client, ConfigError> {
-    reqwest::Client::builder()
-        .connect_timeout(CONNECT_TIMEOUT)
-        .timeout(REQUEST_TIMEOUT)
-        .user_agent(user_agent())
-        .dns_resolver(Arc::new(PreferIpv4))
-        .build()
-        .map_err(|error| ConfigError::Http(error.to_string()))
+/// The address family a client is bound to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum AddressFamily {
+    /// IPv4.
+    Ipv4,
+    /// IPv6.
+    Ipv6,
 }
 
-/// The resolver of the crate: the IPv4 addresses of a host come first.
-///
-/// The lookup runs in the background, so that the request path never waits for
-/// the resolver of the system.
-struct PreferIpv4;
+impl AddressFamily {
+    /// The family that is not this one.
+    pub fn other(self) -> AddressFamily {
+        match self {
+            AddressFamily::Ipv4 => AddressFamily::Ipv6,
+            AddressFamily::Ipv6 => AddressFamily::Ipv4,
+        }
+    }
 
-impl reqwest::dns::Resolve for PreferIpv4 {
-    fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
-        let host = name.as_str().to_string();
-        Box::pin(async move {
-            let resolved = tokio::task::spawn_blocking(move || dns_lookup::lookup_host(&host))
-                .await
-                .map_err(|error| std::io::Error::other(error.to_string()))
-                .and_then(|resolved| resolved)
-                .map_err(|error| -> Box<dyn std::error::Error + Send + Sync> { Box::new(error) })?;
-            let addrs: reqwest::dns::Addrs = Box::new(ipv4_first(&resolved).into_iter());
-            Ok(addrs)
-        })
+    /// The family an address belongs to.
+    pub fn of(address: IpAddr) -> AddressFamily {
+        match address {
+            IpAddr::V4(_) => AddressFamily::Ipv4,
+            IpAddr::V6(_) => AddressFamily::Ipv6,
+        }
     }
 }
 
-/// The addresses of a host, the IPv4 ones first.
+/// The clients the crate downloads the lists with.
 ///
-/// The order within a family is the order the resolver of the system returned.
-fn ipv4_first(addrs: &[IpAddr]) -> Vec<SocketAddr> {
-    let mut ordered: Vec<IpAddr> = Vec::with_capacity(addrs.len());
-    ordered.extend(addrs.iter().filter(|addr| addr.is_ipv4()));
-    ordered.extend(addrs.iter().filter(|addr| addr.is_ipv6()));
-    ordered
-        .into_iter()
-        .map(|addr| SocketAddr::new(addr, 0))
-        .collect()
+/// The set holds a client that is bound to no family and a client for each
+/// family. A client that is bound to a family reaches no address of the other
+/// one, so the crate can repeat a request over the family that is left.
+#[derive(Clone, Debug)]
+pub struct ClientSet {
+    /// The client that is bound to no family.
+    normal: reqwest::Client,
+    /// The client that reaches the IPv4 addresses only.
+    ipv4: reqwest::Client,
+    /// The client that reaches the IPv6 addresses only.
+    ipv6: reqwest::Client,
+}
+
+impl ClientSet {
+    /// Builds a set of clients.
+    ///
+    /// The client that is bound to no family reaches every address of a host;
+    /// the two others reach the addresses of their family only.
+    pub fn new(normal: reqwest::Client, ipv4: reqwest::Client, ipv6: reqwest::Client) -> Self {
+        Self { normal, ipv4, ipv6 }
+    }
+
+    /// The client that is bound to no family.
+    pub fn normal(&self) -> &reqwest::Client {
+        &self.normal
+    }
+
+    /// The client that is bound to the family.
+    pub fn pinned(&self, family: AddressFamily) -> &reqwest::Client {
+        match family {
+            AddressFamily::Ipv4 => &self.ipv4,
+            AddressFamily::Ipv6 => &self.ipv6,
+        }
+    }
+}
+
+/// Builds the clients the crate downloads the lists with.
+///
+/// The clients use rustls, so the crate builds without a system TLS stack, and
+/// they verify the certificate of the endpoint they talk to.
+///
+/// The two pinned clients are bound to the local address of their family, so
+/// that they reach no address of the other one. The bound client of the crate
+/// is bound to no family: the stack splits the addresses of a host into two
+/// groups by the family of the first one and connects the first group first —
+/// the second group starts 300 ms later, and the two groups are raced against
+/// each other.
+pub fn build_clients() -> Result<ClientSet, ConfigError> {
+    Ok(ClientSet::new(
+        build_client(None)?,
+        build_client(Some(IpAddr::V4(Ipv4Addr::UNSPECIFIED)))?,
+        build_client(Some(IpAddr::V6(Ipv6Addr::UNSPECIFIED)))?,
+    ))
+}
+
+/// Builds one client of the set.
+///
+/// A client that is bound to a local address reaches the addresses of that
+/// family only.
+fn build_client(local: Option<IpAddr>) -> Result<reqwest::Client, ConfigError> {
+    let mut builder = reqwest::Client::builder()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .timeout(REQUEST_TIMEOUT)
+        .user_agent(user_agent());
+    if let Some(local) = local {
+        builder = builder.local_address(local);
+    }
+    builder
+        .build()
+        .map_err(|error| ConfigError::Http(error.to_string()))
 }
 
 /// Classifies a transport failure.
@@ -108,71 +145,67 @@ pub fn parse_retry_after(value: Option<&str>) -> Option<Duration> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Read, Write};
+    use std::net::SocketAddr;
 
-    /// A host that answers with both families is tried with IPv4 first.
-    #[test]
-    fn the_ipv4_addresses_of_a_mixed_host_come_first() {
-        let addrs = vec![
-            "2001:db8::1".parse::<IpAddr>().unwrap(),
-            "1.2.3.4".parse::<IpAddr>().unwrap(),
-            "5.6.7.8".parse::<IpAddr>().unwrap(),
-            "2001:db8::2".parse::<IpAddr>().unwrap(),
-        ];
-        let ordered = ipv4_first(&addrs);
-        assert_eq!(
-            ordered,
-            vec![
-                SocketAddr::new("1.2.3.4".parse::<IpAddr>().unwrap(), 0),
-                SocketAddr::new("5.6.7.8".parse::<IpAddr>().unwrap(), 0),
-                SocketAddr::new("2001:db8::1".parse::<IpAddr>().unwrap(), 0),
-                SocketAddr::new("2001:db8::2".parse::<IpAddr>().unwrap(), 0),
-            ]
-        );
+    /// A server that answers with a canned response, on the loopback.
+    fn server(response: &'static [u8]) -> SocketAddr {
+        let listener =
+            std::net::TcpListener::bind("127.0.0.1:0").expect("the listener of the test");
+        let address = listener.local_addr().expect("the address of the listener");
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { continue };
+                let mut buffer = [0_u8; 1024];
+                let _ = stream.read(&mut buffer);
+                let _ = stream.write_all(response);
+                let _ = stream.flush();
+            }
+        });
+        address
     }
 
-    /// A host that answers with IPv4 only keeps its addresses.
-    #[test]
-    fn the_addresses_of_an_ipv4_host_stay() {
-        let addrs = vec![
-            "1.2.3.4".parse::<IpAddr>().unwrap(),
-            "5.6.7.8".parse::<IpAddr>().unwrap(),
-        ];
-        assert_eq!(
-            ipv4_first(&addrs),
-            vec![
-                SocketAddr::new("1.2.3.4".parse::<IpAddr>().unwrap(), 0),
-                SocketAddr::new("5.6.7.8".parse::<IpAddr>().unwrap(), 0),
-            ]
-        );
-    }
-
-    /// A host that answers with IPv6 only keeps its addresses.
-    #[test]
-    fn the_addresses_of_an_ipv6_host_stay() {
-        let addrs = vec![
-            "2001:db8::1".parse::<IpAddr>().unwrap(),
-            "2001:db8::2".parse::<IpAddr>().unwrap(),
-        ];
-        assert!(ipv4_first(&addrs).iter().all(|addr| addr.is_ipv6()));
-    }
-
-    /// The resolver of the crate answers with the addresses of the host.
-    ///
-    /// The host is a literal, so the lookup of the test is answered by the
-    /// resolver of the system itself — the test reaches no network.
+    /// A client that is bound to a family reaches no address of the other one.
     #[tokio::test]
-    async fn the_resolver_answers_with_the_addresses_of_the_host() {
-        use reqwest::dns::Resolve;
-        use std::str::FromStr;
+    async fn a_pinned_client_reaches_no_address_of_the_other_family() {
+        let address = server(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        let url = format!("http://{address}/");
 
-        let name = reqwest::dns::Name::from_str("127.0.0.1").expect("the name of a host");
-        let addrs = PreferIpv4
-            .resolve(name)
+        let clients = build_clients().expect("the clients of the crate");
+        let response = clients
+            .pinned(AddressFamily::Ipv4)
+            .get(&url)
+            .send()
             .await
-            .expect("the addresses of the host")
-            .collect::<Vec<SocketAddr>>();
-        assert!(!addrs.is_empty(), "the host must have addresses");
-        assert!(addrs.iter().all(|addr| addr.is_ipv4()), "{addrs:?}");
-        assert!(addrs.iter().all(|addr| addr.port() == 0), "{addrs:?}");
+            .expect("the IPv4 client reaches the server");
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+        let error = clients
+            .pinned(AddressFamily::Ipv6)
+            .get(&url)
+            .send()
+            .await
+            .expect_err("the IPv6 client reaches no IPv4 address");
+        assert!(error.is_connect(), "{error}");
+    }
+
+    /// The family of an address is the family it belongs to.
+    #[test]
+    fn the_family_of_an_address_is_known() {
+        assert_eq!(
+            AddressFamily::of("1.2.3.4".parse::<IpAddr>().unwrap()),
+            AddressFamily::Ipv4
+        );
+        assert_eq!(
+            AddressFamily::of("2001:db8::1".parse::<IpAddr>().unwrap()),
+            AddressFamily::Ipv6
+        );
+    }
+
+    /// The family that is not this one is the other one.
+    #[test]
+    fn the_other_family_is_the_other_one() {
+        assert_eq!(AddressFamily::Ipv4.other(), AddressFamily::Ipv6);
+        assert_eq!(AddressFamily::Ipv6.other(), AddressFamily::Ipv4);
     }
 }
