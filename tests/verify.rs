@@ -784,8 +784,12 @@ fn a_claim_of_a_crawler_of_the_reverse_dns_from_an_address_outside_the_domains_f
 /// The four crawlers of Moonshot and of Tencent are verified by the address
 /// space their vendors publish.
 ///
-/// Each vendor publishes a document for every one of its crawlers, so a request
-/// is verified against the address space of the crawler its marker names.
+/// Each vendor publishes a document for every one of its crawlers, and a
+/// request is verified against the address space of the crawler its marker
+/// names. The three documents of Moonshot hold the same prefixes today — the
+/// vendor publishes one address space for its three crawlers — so the three
+/// crawlers share it; when the vendor gives the three crawlers address spaces
+/// of their own, the registry follows without a change.
 #[test]
 fn the_crawlers_of_moonshot_and_of_tencent_are_verified_by_the_address_space_they_publish() {
     let (_directory, validator) = validator();
@@ -832,25 +836,36 @@ fn a_claim_of_a_crawler_of_moonshot_or_of_tencent_from_an_unknown_address_fails_
     }
 }
 
-/// The address space of one crawler of Moonshot does not verify the marker of
-/// another.
+/// Every crawler of Moonshot is verified against the document of its own.
 ///
-/// The vendor publishes a document for every one of its crawlers, so a request
-/// that names one crawler and comes from the address of the other claims a
-/// crawler it is not.
+/// The vendor publishes a document for every one of its crawlers, and each
+/// crawler is verified against the document it names. The three documents hold
+/// the same prefixes today, so the seeds below are synthetic: they give each
+/// crawler an address that the other two do not hold, to show that the
+/// documents are read per crawler. When the vendor gives the three crawlers
+/// address spaces of their own, a request that names one crawler and comes
+/// from the address of another claims a crawler it is not, and it fails closed.
 #[test]
-fn the_crawlers_of_moonshot_do_not_share_their_address_space() {
+fn every_crawler_of_moonshot_is_verified_against_its_own_document() {
     let (_directory, validator) = validator();
-    validator.seed_prefix("kimbot", "47.79.253.42/32").unwrap();
+    validator.seed_prefix("kimbot", "198.51.100.10/32").unwrap();
     validator
-        .seed_prefix("kimi-searchbot", "47.79.253.91/32")
+        .seed_prefix("kimi-searchbot", "198.51.100.20/32")
+        .unwrap();
+    validator
+        .seed_prefix("kimi-user", "198.51.100.30/32")
         .unwrap();
 
-    let search = validator.verify(KIMI_SEARCHBOT_UA, ip("47.79.253.42"));
+    let search = validator.verify(KIMI_SEARCHBOT_UA, ip("198.51.100.10"));
     assert_eq!(search.status, VerifyStatus::Failed);
     assert!(!search.is_verified());
 
-    let training = validator.verify(KIMI_BOT_UA, ip("47.79.253.91"));
+    let training = validator.verify(KIMI_BOT_UA, ip("198.51.100.20"));
     assert_eq!(training.status, VerifyStatus::Failed);
     assert!(!training.is_verified());
+
+    let user = validator.verify(KIMI_USER_UA, ip("198.51.100.30"));
+    assert!(user.is_verified());
+    assert_eq!(user.name, "kimi-user");
+    assert_eq!(user.vendor, "Moonshot");
 }

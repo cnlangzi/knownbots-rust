@@ -1,6 +1,7 @@
 # Kimi-User - Moonshot AI user-triggered crawler
 # https://www.kimi.com/policies/kimi-crawlers
 # JSON format: https://www.kimi.ai/policies/kimi-user.json
+# Shares the address list of KimiBot and of Kimi-SearchBot — a document per crawler, holding the same prefixes today; the list uses Google-style ipv4Prefix fields.
 kind: AIAssist
 name: kimi-user
 vendor: "Moonshot"
