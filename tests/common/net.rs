@@ -66,8 +66,12 @@ pub fn clients() -> ClientSet {
 ///
 /// The mock server binds to the IPv4 loopback alone, so the test binds the
 /// listener itself: a listener on `[::]` takes the IPv4 connections as well.
+///
+/// The tests need a host with IPv6: the listener of `[::]` answers for both
+/// families only where the host has them.
 pub async fn server() -> MockServer {
-    let listener = std::net::TcpListener::bind("[::]:0").expect("the listener of the test");
+    let listener = std::net::TcpListener::bind("[::]:0")
+        .expect("the listener of the test (the tests need a host with IPv6)");
     MockServer::builder().listener(listener).start().await
 }
 

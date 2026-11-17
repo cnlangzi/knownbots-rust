@@ -442,6 +442,10 @@ fn host_of(url: &str) -> String {
 }
 
 /// The URL of a message: without its query and without its fragment.
+///
+/// A URL that does not parse keeps neither of them either: the query and the
+/// fragment are cut off by their text, so that a token of the host does not
+/// reach the message.
 fn sanitized_url(url: &str) -> String {
     match reqwest::Url::parse(url) {
         Ok(mut parsed) => {
@@ -449,7 +453,10 @@ fn sanitized_url(url: &str) -> String {
             parsed.set_fragment(None);
             parsed.to_string()
         }
-        Err(_) => url.to_string(),
+        Err(_) => {
+            let end = url.find(['?', '#']).unwrap_or(url.len());
+            url[..end].to_string()
+        }
     }
 }
 
@@ -639,7 +646,7 @@ mod tests {
                 return (first, second);
             }
         }
-        panic!("the stubs of the test could not share a port");
+        panic!("the stubs of the test could not share a port (the tests need a host with IPv6)");
     }
 
     /// A resolver that answers with the loopback of both families.
@@ -973,6 +980,22 @@ mod tests {
             "the download took more than three attempts"
         );
         let _ = std::fs::remove_file(&path);
+    }
+
+    /// The message of a download whose URL does not parse holds neither the
+    /// query nor the fragment of the URL.
+    #[tokio::test]
+    async fn the_failure_of_a_url_that_does_not_parse_carries_no_query_and_no_fragment() {
+        let transport = Transport::new(clients());
+        let url = "https://vend or/ips.json?token=secret#part".to_string();
+
+        let downloaded = transport.download("google", &[url]).await;
+
+        let failure = downloaded.failure.expect("the refresh must fail");
+        let message = failure.to_string();
+        assert!(message.contains("ips.json"), "{message}");
+        assert!(!message.contains("token=secret"), "{message}");
+        assert!(!message.contains("#part"), "{message}");
     }
 
     /// The failure of a transport failure carries the URL without its query

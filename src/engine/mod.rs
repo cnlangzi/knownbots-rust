@@ -138,7 +138,7 @@ impl Validator {
         #[cfg(feature = "full")]
         let (rdns_tx, rdns_rx) = mpsc::channel(crate::worker::RDNS_QUEUE);
         #[cfg(feature = "full")]
-        let transport = feed::Transport::new(match config.client_set.clone() {
+        let transport = feed::Transport::new(match config.client_set {
             Some(clients) => clients,
             None => crate::http::build_clients()?,
         });

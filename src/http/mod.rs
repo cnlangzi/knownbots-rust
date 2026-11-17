@@ -94,11 +94,11 @@ impl ClientSet {
 /// they verify the certificate of the endpoint they talk to.
 ///
 /// The two pinned clients are bound to the local address of their family, so
-/// that they reach no address of the other one. The bound client of the crate
-/// is bound to no family: the stack splits the addresses of a host into two
-/// groups by the family of the first one and connects the first group first —
-/// the second group starts 300 ms later, and the two groups are raced against
-/// each other.
+/// that they reach no address of the other one. The unbound client of the
+/// crate is bound to no family: the stack splits the addresses of a host into
+/// two groups by the family of the first one and connects the first group
+/// first — the second group starts 300 ms later, and the two groups are raced
+/// against each other.
 pub fn build_clients() -> Result<ClientSet, ConfigError> {
     Ok(ClientSet::new(
         build_client(None)?,
