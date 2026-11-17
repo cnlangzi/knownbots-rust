@@ -19,7 +19,7 @@ pub use engine::Validator;
 pub use error::{ConfigError, ParseError, RefreshFailure};
 pub use feed::{is_known_parser, parse};
 #[cfg(feature = "full")]
-pub use http::{HttpClient, reqwest};
+pub use http::{AddressFamily, ClientSet, reqwest};
 pub use index::{contains_word, find_bot_by_ua};
 pub use model::bot::{Bot, BotConfigError, BotKind};
 pub use model::rdns::match_domain;

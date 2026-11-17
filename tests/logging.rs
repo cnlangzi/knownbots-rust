@@ -14,6 +14,9 @@ use knownbots::{RefreshFailure, Validator, ValidatorOptions};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
+#[path = "common/net.rs"]
+mod net;
+
 /// The fields of the events the crate emits, kept for the assertions.
 #[derive(Clone, Default)]
 struct Warnings {
@@ -126,6 +129,49 @@ async fn a_failed_refresh_of_one_bot_is_logged() {
     );
     assert!(
         entries.iter().any(|entry| entry.contains("403")),
+        "{entries:?}"
+    );
+}
+
+/// A refusal that the repetition over the other address family repaired is
+/// logged with what the endpoint answered.
+#[tokio::test]
+async fn a_repaired_refusal_is_logged() {
+    let (server, validator, _directory) =
+        net::refusing_server(|port| format!("{}?token=secret#part", net::url(port))).await;
+    let port = server.address().port();
+
+    let warnings = Warnings::default();
+    let _guard = tracing::subscriber::set_default(warnings.clone());
+    let failure = validator.refresh_bot("testbot").await;
+    drop(_guard);
+
+    assert!(failure.is_none(), "{failure:?}");
+
+    let entries = warnings.captured();
+    assert!(
+        entries.iter().any(|entry| entry.contains("status=203")),
+        "{entries:?}"
+    );
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.contains("content_type=text/xml")),
+        "{entries:?}"
+    );
+    assert!(
+        entries.iter().any(|entry| entry.contains("excerpt=OK")),
+        "{entries:?}"
+    );
+    // The URL of the log carries neither a query nor a fragment.
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.contains(&format!("url=http://{}:{port}/ips.json", net::HOST))),
+        "{entries:?}"
+    );
+    assert!(
+        !entries.iter().any(|entry| entry.contains("token=secret")),
         "{entries:?}"
     );
 }

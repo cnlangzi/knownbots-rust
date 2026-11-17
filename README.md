@@ -58,10 +58,11 @@ disk can match. The items that exist only with the feature are:
 - `Validator::start_background`
 - `Validator::refresh`
 - `Validator::refresh_bot`
-- `knownbots::HttpClient`
+- `knownbots::ClientSet`
+- `knownbots::AddressFamily`
 - `knownbots::reqwest`
-- the `http_client` field of `ValidatorOptions`
-- `knownbots::feed::download_prefixes`
+- the `client_set` field of `ValidatorOptions`
+- `knownbots::feed::Transport`
 - `knownbots::feed::Downloaded`
 
 ## Quick start
@@ -217,10 +218,18 @@ request, when the on-disk cache of the crawler holds the answer.
 | `fail_limit` | `1000` | How many failed reverse lookups a crawler remembers. |
 | `refresh_interval` | `24h` | How often the published lists are refreshed. |
 | `refresh_on_start` | `true` | Whether the worker refreshes the lists as soon as it starts. |
-| `http_client` | none | The client the lists are downloaded with. The crate builds one when the host supplies none. Only with the `full` feature. |
+| `client_set` | none | The clients the lists are downloaded with. The crate builds a set of its own when the host supplies none. Only with the `full` feature. |
 
 Build the options with `..ValidatorOptions::default()`, so that an option the
 crate adds later does not break the host.
+
+A host that reaches the vendors through a proxy, or that trusts its own root
+store, builds the three clients itself — with the `reqwest` the crate
+re-exports, so that it needs no dependency of its own — and hands them over as
+a set. The crate binds a client to an address family, so that a download that
+was refused can be repeated over the other family; a host that brings its own
+transport hands over the whole set, and its settings then apply to every
+attempt.
 
 A host that wants to keep the caches in its own directory points the root at
 it. `Validator::with_root` builds a validator with the default options and
@@ -521,13 +530,29 @@ The download of a published list is not a single step: the body is fetched, it
 is decoded, and it is read by the parser of the crawler. The crate decodes the
 bodies that are compressed with gzip, brotli, zstd or deflate.
 
-The client the crate builds prefers the IPv4 addresses of a host and falls back
-to the IPv6 ones: the stack splits the addresses of a host into two groups by
-the family of the first one and connects the first group first — the second
-group starts 300 ms later, and the two groups are raced against each other —
-so the order of the addresses decides which path to the vendor is taken. A host
-that supplies a client of its own keeps its own choice of the address family —
-the crate does not touch it.
+The crate owns the transport it downloads the lists with: it builds three
+clients — one that is bound to no address family, one that reaches the IPv4
+addresses only, and one that reaches the IPv6 addresses only. A client that is
+bound to a family reaches no address of the other one.
+
+A path that is tampered with answers with something that is not the list: the
+download succeeds at the transport level, but the body is not the document of
+the vendor. Such a download is repeated over the other address family, and the
+family that delivered the document is remembered for the host — the several
+lists a vendor publishes on one host share it. The next download of that host
+uses the pinned client of that family, so it does not pay for the refusal
+again.
+
+A download whose answer is a transport failure is repeated over the other
+address family as well. An answer the upstream decided itself — 401, 403, 404,
+429 and the server errors — is never repeated: it is the vendor's answer about
+the request, and repeating it repairs nothing. A rate limit and a server error
+are transient: they are retried twice on the same family, three seconds apart
+or after the `Retry-After` of the answer.
+
+When both attempts fail, the failure that is reported is the one closest to the
+vendor's own answer: an answer the upstream decided itself beats a refusal, and
+a refusal beats a transport failure.
 
 The two failures of a download are told apart, because the two mean different
 things:
@@ -544,14 +569,17 @@ and the crate has to follow it. A list that holds no usable prefix at all is
 `Broken` as well — the document was read, but it yielded nothing.
 
 A refusal names what the endpoint answered: the status, the content type and
-the first bytes of the body. A status other than 200 is a refusal of the
-endpoint, not a document the crate mis-reads.
+the first bytes of the body. A status other than 200 is the answer of the
+endpoint, not a document the crate mis-reads. The URL of a message and of the
+log carries neither a query nor a fragment, so that a token of the host does
+not reach the log. A refusal that the repetition repaired is written to the
+log with the status, the content type and an excerpt of the body.
 
 An entry of a list that holds no usable prefix is skipped; the other entries of
 the document still count. A crawler whose refresh failed keeps the prefixes it
 had, so it keeps verifying from the cache.
 
-The download itself is `knownbots::feed::download_prefixes`; it answers a
+The download itself is `knownbots::feed::Transport`; it answers a
 `knownbots::feed::Downloaded` that holds the prefixes it read and the failure
 that stopped the rest.
 

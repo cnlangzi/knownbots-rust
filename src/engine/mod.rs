@@ -80,7 +80,7 @@ pub struct Validator {
     #[cfg(feature = "full")]
     pub(crate) in_flight: Mutex<HashSet<(String, IpAddr)>>,
     #[cfg(feature = "full")]
-    pub(crate) http: reqwest::Client,
+    pub(crate) transport: feed::Transport,
     /// Tells the worker thread to stop.
     #[cfg(feature = "full")]
     pub(crate) shutdown_tx: watch::Sender<bool>,
@@ -138,10 +138,10 @@ impl Validator {
         #[cfg(feature = "full")]
         let (rdns_tx, rdns_rx) = mpsc::channel(crate::worker::RDNS_QUEUE);
         #[cfg(feature = "full")]
-        let http = match config.http_client.clone() {
-            Some(client) => client,
-            None => crate::http::build_client()?,
-        };
+        let transport = feed::Transport::new(match config.client_set {
+            Some(clients) => clients,
+            None => crate::http::build_clients()?,
+        });
         #[cfg(feature = "full")]
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
@@ -164,7 +164,7 @@ impl Validator {
             #[cfg(feature = "full")]
             in_flight: Mutex::new(HashSet::new()),
             #[cfg(feature = "full")]
-            http,
+            transport,
             #[cfg(feature = "full")]
             shutdown_tx,
             #[cfg(feature = "full")]
@@ -367,12 +367,12 @@ impl Validator {
             if bot.urls.is_empty() {
                 continue;
             }
-            let http = self.http.clone();
+            let transport = self.transport.clone();
             let parser = bot.parser.clone();
             let urls = bot.urls.clone();
             let name = bot.name.clone();
             tasks.spawn(async move {
-                let downloaded = feed::download_prefixes(&http, &parser, &urls).await;
+                let downloaded = transport.download(&parser, &urls).await;
                 (name, downloaded)
             });
         }
@@ -442,7 +442,7 @@ impl Validator {
         if bot.urls.is_empty() {
             return None;
         }
-        let downloaded = feed::download_prefixes(&self.http, &bot.parser, &bot.urls).await;
+        let downloaded = self.transport.download(&bot.parser, &bot.urls).await;
         if !downloaded.prefixes.is_empty() {
             bot.store_downloaded(downloaded.prefixes);
         }
