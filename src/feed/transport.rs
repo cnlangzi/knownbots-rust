@@ -94,34 +94,35 @@ impl Transport {
     async fn download_one(&self, parser: &str, url: &str) -> Result<Vec<IpNet>, RefreshFailure> {
         let host = host_of(url);
         let remembered = self.family_of(&host);
-        // The families that are known to be bad: the ones that refused and the
-        // ones whose route failed.
-        let mut failed: Vec<AddressFamily> = Vec::new();
+        // The URL of the messages and of the log: without its query and
+        // without its fragment, so that a token of the host does not reach
+        // the log.
+        let shown = sanitized_url(url);
+        let mut plan = Plan::new(remembered);
         let mut refusal: Option<Refusal> = None;
         let mut decided: Option<RefreshFailure> = None;
         let mut route: Option<RefreshFailure> = None;
-        let mut last_peer: Option<AddressFamily> = None;
-        let mut round = 0;
 
-        while let Some(choice) = next_choice(round, remembered, last_peer, &failed) {
+        while let Some(choice) = plan.next() {
             let (client, family) = match choice {
                 Choice::Normal => (self.clients.normal(), None),
                 Choice::Pinned(family) => (self.clients.pinned(family), Some(family)),
             };
 
-            match attempt(client, parser, url).await {
+            match attempt(client, parser, url, &shown).await {
                 Outcome::Document { prefixes, peer } => {
                     // The family that delivered the document is remembered for
                     // the host: the lists of a vendor share a host, and the
                     // next download of that host uses the pinned client of
-                    // that family.
-                    if let Some(delivered) = family.or(peer) {
+                    // that family. The family of the peer that answered is
+                    // the truth: it is what the path really was.
+                    if let Some(delivered) = peer.or(family) {
                         self.remember(&host, delivered);
                     }
                     if let Some(refusal) = &refusal {
                         // The other address family repaired the refusal.
                         tracing::warn!(
-                            url = %sanitized_url(url),
+                            url = %shown,
                             status = %refusal.status,
                             content_type = %refusal.content_type,
                             excerpt = %refusal.excerpt,
@@ -138,10 +139,8 @@ impl Transport {
                     break;
                 }
                 Outcome::Refusal(answer) => {
-                    if let Some(peer) = answer.peer {
-                        failed.push(peer);
-                        last_peer = Some(peer);
-                    }
+                    // The family that refused is not tried again.
+                    plan.refused(answer.peer);
                     if refusal.is_none() {
                         refusal = Some(answer);
                     }
@@ -150,18 +149,16 @@ impl Transport {
                     if route.is_none() {
                         route = Some(failure);
                     }
-                    if let Some(family) = family {
-                        failed.push(family);
-                        if remembered == Some(family) {
-                            // The route of the remembered family is broken:
-                            // the family is forgotten, and the next download of
-                            // the host starts with the unbound client.
-                            self.forget(&host);
-                        }
+                    if let Some(family) = family
+                        && remembered == Some(family)
+                    {
+                        // The route of the remembered family is broken: the
+                        // family is forgotten, and the next download of the
+                        // host starts with the unbound client.
+                        self.forget(&host);
                     }
                 }
             }
-            round += 1;
         }
 
         // The failure that is closest to the vendor's own answer wins: an
@@ -170,7 +167,7 @@ impl Transport {
         Err(decided
             .or_else(|| refusal.map(|refusal| RefreshFailure::Unreachable(refusal.message)))
             .or(route)
-            .unwrap_or_else(|| RefreshFailure::Broken(format!("{url} could not be downloaded"))))
+            .unwrap_or_else(|| RefreshFailure::Broken(format!("{shown} could not be downloaded"))))
     }
 
     /// The family that delivered the document of the host.
@@ -197,40 +194,73 @@ enum Choice {
     Pinned(AddressFamily),
 }
 
-/// The client of the next attempt, or `None` when no family is left.
+/// The plan of the attempts of one document.
 ///
-/// The first attempt uses the pinned client of the remembered family, or the
-/// unbound client when the host has no remembered family. A repetition uses
-/// the other family: the family of the peer that answered, the other family of
-/// the remembered one when the peer is unknown, and the family that is left
-/// when nothing is known.
-fn next_choice(
-    attempt: usize,
+/// The plan holds the family that delivered the document of the host the last
+/// time, the family of the peer that answered, and the families that are
+/// spent. It never hands out a family twice, so a document takes at most
+/// three attempts: the first one, the repetition over the other family, and
+/// the repetition over the family that is left.
+struct Plan {
+    /// The family that delivered the document of the host the last time.
     remembered: Option<AddressFamily>,
-    last_peer: Option<AddressFamily>,
-    failed: &[AddressFamily],
-) -> Option<Choice> {
-    let family = match attempt {
-        0 => {
-            return Some(match remembered {
-                Some(family) => Choice::Pinned(family),
+    /// The family of the peer that answered.
+    peer: Option<AddressFamily>,
+    /// The families that are spent: the ones that were used with a pinned
+    /// client, and the ones that refused.
+    spent: Vec<AddressFamily>,
+    /// The number of the attempts that were made.
+    attempts: usize,
+}
+
+impl Plan {
+    /// Builds the plan of the document of a host.
+    fn new(remembered: Option<AddressFamily>) -> Self {
+        Self {
+            remembered,
+            peer: None,
+            spent: Vec::new(),
+            attempts: 0,
+        }
+    }
+
+    /// The client of the next attempt, or `None` when no attempt is left.
+    ///
+    /// The first attempt uses the pinned client of the remembered family, or
+    /// the unbound client when the host has no remembered family. A repetition
+    /// uses the other family: the family of the peer that answered, the other
+    /// family of the remembered one when the peer is unknown, and the family
+    /// that is left when nothing is known.
+    fn next(&mut self) -> Option<Choice> {
+        self.attempts += 1;
+        if self.attempts == 1 {
+            return Some(match self.remembered {
+                Some(family) => {
+                    self.spent.push(family);
+                    Choice::Pinned(family)
+                }
                 None => Choice::Normal,
             });
         }
-        1 => match last_peer.or(remembered) {
-            Some(family) => family.other(),
-            None => first_untried(failed)?,
-        },
-        _ => first_untried(failed)?,
-    };
-    Some(Choice::Pinned(family))
-}
+        let other = self.peer.or(self.remembered).map(AddressFamily::other);
+        let family = match other {
+            Some(family) if !self.spent.contains(&family) => family,
+            _ => [AddressFamily::Ipv4, AddressFamily::Ipv6]
+                .into_iter()
+                .find(|family| !self.spent.contains(family))?,
+        };
+        self.spent.push(family);
+        Some(Choice::Pinned(family))
+    }
 
-/// The first of the two families that was not tried yet.
-fn first_untried(failed: &[AddressFamily]) -> Option<AddressFamily> {
-    [AddressFamily::Ipv4, AddressFamily::Ipv6]
-        .into_iter()
-        .find(|family| !failed.contains(family))
+    /// The family of the peer that refused is spent: it is not tried again.
+    fn refused(&mut self, peer: Option<AddressFamily>) {
+        let Some(peer) = peer else { return };
+        if !self.spent.contains(&peer) {
+            self.spent.push(peer);
+        }
+        self.peer = Some(peer);
+    }
 }
 
 /// What an attempt at one document produced.
@@ -275,35 +305,33 @@ impl Refusal {
         body: &[u8],
         peer: Option<AddressFamily>,
     ) -> Self {
+        let excerpt = excerpt(body);
         let message = if body.is_empty() {
             format!("{url} returned {status}")
         } else {
-            format!(
-                "{url} returned {status} ({content_type}): {}",
-                excerpt(body)
-            )
+            format!("{url} returned {status} ({content_type}): {excerpt}")
         };
         Self {
             message,
             status,
             content_type,
-            excerpt: excerpt(body),
+            excerpt,
             peer,
         }
     }
 
     /// The refusal of a 200 whose body the parser does not read as the list.
     fn document(url: &str, content_type: String, body: &[u8], peer: Option<AddressFamily>) -> Self {
+        let excerpt = excerpt(body);
         let message = format!(
-            "{url} answered {} with {content_type}: {}",
-            StatusCode::OK.as_u16(),
-            excerpt(body)
+            "{url} answered {} with {content_type}: {excerpt}",
+            StatusCode::OK.as_u16()
         );
         Self {
             message,
             status: StatusCode::OK,
             content_type,
-            excerpt: excerpt(body),
+            excerpt,
             peer,
         }
     }
@@ -315,12 +343,12 @@ impl Refusal {
 /// not the list of the vendor. A status the upstream decided itself — 401,
 /// 403, 404, 429 and the server errors — is never a refusal. A rate limit
 /// and a server error are transient, and they are retried on the same family.
-async fn attempt(client: &Client, parser: &str, url: &str) -> Outcome {
+async fn attempt(client: &Client, parser: &str, url: &str, shown: &str) -> Outcome {
     let mut retry = 0;
     loop {
         let mut response = match client.get(url).send().await {
             Ok(response) => response,
-            Err(error) => return Outcome::Route(map_transport_error(&error, url)),
+            Err(error) => return Outcome::Route(map_transport_error(&error, shown)),
         };
         let status = response.status();
         let content_type = content_type(&response);
@@ -332,22 +360,22 @@ async fn attempt(client: &Client, parser: &str, url: &str) -> Outcome {
             let body = match response.bytes().await {
                 Ok(body) => body.to_vec(),
                 Err(error) => {
-                    return Outcome::Broken(RefreshFailure::Broken(format!("{url}: {error}")));
+                    return Outcome::Broken(RefreshFailure::Broken(format!("{shown}: {error}")));
                 }
             };
             return match parsers::parse(parser, &body) {
                 Ok(nets) if nets.is_empty() => Outcome::Broken(RefreshFailure::Broken(format!(
-                    "the list at {url} holds no usable prefix"
+                    "the list at {shown} holds no usable prefix"
                 ))),
                 Ok(nets) => Outcome::Document {
                     prefixes: nets,
                     peer,
                 },
                 Err(ParseError::NotADocument(_)) => {
-                    Outcome::Refusal(Refusal::document(url, content_type, &body, peer))
+                    Outcome::Refusal(Refusal::document(shown, content_type, &body, peer))
                 }
                 Err(ParseError::UnexpectedShape(reason)) => {
-                    Outcome::Broken(RefreshFailure::Broken(format!("{url}: {reason}")))
+                    Outcome::Broken(RefreshFailure::Broken(format!("{shown}: {reason}")))
                 }
             };
         }
@@ -366,7 +394,7 @@ async fn attempt(client: &Client, parser: &str, url: &str) -> Outcome {
         if transient && retry < FETCH_RETRIES {
             retry += 1;
             tracing::warn!(
-                url,
+                url = %shown,
                 %status,
                 attempt = retry,
                 "knownbots: the endpoint refused the request; retrying"
@@ -380,7 +408,7 @@ async fn attempt(client: &Client, parser: &str, url: &str) -> Outcome {
         // that cannot be read does not change the refusal — the endpoint has
         // refused us either way.
         let body = response.chunk().await.ok().flatten().unwrap_or_default();
-        let refusal = Refusal::status(url, status, content_type, &body, peer);
+        let refusal = Refusal::status(shown, status, content_type, &body, peer);
         return if status.is_success() {
             Outcome::Refusal(refusal)
         } else {
@@ -521,14 +549,43 @@ mod tests {
     }
 
     /// The answer of a stub: the status line, the headers and the body.
+    ///
+    /// The answer tells the client to close the connection: the client never
+    /// reuses a connection the stub closed, and the count of the requests is
+    /// the count of the answers.
     fn response(status: &str, headers: &[(&str, &str)], body: &str) -> Vec<u8> {
         let mut answer = format!("HTTP/1.1 {status}\r\n");
         for (name, value) in headers {
             answer.push_str(&format!("{name}: {value}\r\n"));
         }
+        answer.push_str("Connection: close\r\n");
         answer.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
         answer.push_str(body);
         answer.into_bytes()
+    }
+
+    /// Reads the request of the client.
+    ///
+    /// The whole request is read, so that the stub closes the connection
+    /// without a reset: a reset would take the answer with it, and the client
+    /// would see a transport failure instead of the answer.
+    fn read_request(stream: &mut impl Read) -> usize {
+        let mut buffer = [0_u8; 1024];
+        let mut seen = 0;
+        while seen < buffer.len() {
+            match stream.read(&mut buffer[seen..]) {
+                Ok(0) => return seen,
+                Ok(read) => seen += read,
+                Err(_) => return seen,
+            }
+            if buffer[..seen]
+                .windows(4)
+                .any(|window| window == b"\r\n\r\n")
+            {
+                return seen;
+            }
+        }
+        seen
     }
 
     /// A stub that answers with a canned response and counts the requests.
@@ -551,13 +608,16 @@ mod tests {
             std::thread::spawn(move || {
                 for stream in listener.incoming() {
                     let Ok(mut stream) = stream else { continue };
-                    counter.fetch_add(1, Ordering::SeqCst);
-                    let mut buffer = [0_u8; 1024];
-                    let _ = stream.read(&mut buffer);
-                    if let Some(response) = &response {
-                        let _ = stream.write_all(response);
-                        let _ = stream.flush();
+                    if read_request(&mut stream) == 0 {
+                        continue;
                     }
+                    counter.fetch_add(1, Ordering::SeqCst);
+                    let Some(response) = &response else {
+                        // The path takes the connection and drops it.
+                        continue;
+                    };
+                    let _ = stream.write_all(response);
+                    let _ = stream.flush();
                 }
             });
             Ok(Stub { port, requests })
@@ -636,6 +696,9 @@ mod tests {
     async fn a_refused_document_is_repaired_over_the_other_family() {
         let (ipv4, ipv6) = stubs(Some(refusal()), Some(document())).await;
         let transport = Transport::new(clients());
+        // The host is reached over IPv4, so the first attempt reaches no
+        // address of the other family.
+        transport.remember("vendor.test", AddressFamily::Ipv4);
 
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
@@ -645,12 +708,29 @@ mod tests {
         assert_eq!(ipv6.requests(), 1, "the other family was asked once");
     }
 
+    /// A host with no remembered family is downloaded through the unbound
+    /// client, and a refusal is repaired over the other family.
+    #[tokio::test]
+    async fn a_host_without_a_remembered_family_is_downloaded() {
+        let (ipv4, _ipv6) = stubs(Some(refusal()), Some(document())).await;
+        let transport = Transport::new(clients());
+
+        let downloaded = transport.download("google", &[url(ipv4.port)]).await;
+
+        assert_eq!(downloaded.prefixes.len(), 1, "{downloaded:?}");
+        assert!(downloaded.failure.is_none(), "{downloaded:?}");
+        // The unbound client prefers the IPv4 addresses of the host, so the
+        // refusal is the answer it takes.
+        assert_eq!(ipv4.requests(), 1, "the refused family was asked once");
+    }
+
     /// The family that delivered the document is remembered for the host, and
     /// the next download of that host uses the pinned client of that family.
     #[tokio::test]
     async fn the_family_that_delivered_the_document_is_remembered() {
         let (ipv4, ipv6) = stubs(Some(refusal()), Some(document())).await;
         let transport = Transport::new(clients());
+        transport.remember("vendor.test", AddressFamily::Ipv4);
 
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
         assert_eq!(downloaded.prefixes.len(), 1, "{downloaded:?}");
@@ -668,6 +748,7 @@ mod tests {
         let (ipv4, ipv6) = stubs(Some(forbidden()), Some(document())).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -686,6 +767,7 @@ mod tests {
         let (ipv4, ipv6) = stubs(Some(changed()), Some(document())).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -735,6 +817,7 @@ mod tests {
         let (ipv4, _ipv6) = stubs(Some(refusal()), Some(forbidden())).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -750,6 +833,7 @@ mod tests {
         let (ipv4, _ipv6) = stubs(Some(refusal()), None).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -771,6 +855,7 @@ mod tests {
         let (ipv4, ipv6) = stubs(Some(rate_limit()), Some(document())).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -789,6 +874,7 @@ mod tests {
         let (ipv4, _ipv6) = stubs(Some(truncated()), Some(document())).await;
         let transport = Transport::new(clients());
 
+        transport.remember("vendor.test", AddressFamily::Ipv4);
         let downloaded = transport.download("google", &[url(ipv4.port)]).await;
 
         let failure = downloaded.failure.expect("the refresh must fail");
@@ -799,6 +885,114 @@ mod tests {
         let message = failure.to_string();
         assert!(message.contains(&url(ipv4.port)), "{message}");
         assert!(message.contains("403"), "{message}");
+    }
+
+    /// The plan never hands out a family twice, and a document takes at most
+    /// three attempts.
+    #[test]
+    fn the_plan_takes_at_most_three_attempts() {
+        let mut plan = Plan::new(None);
+        assert!(matches!(plan.next(), Some(Choice::Normal)));
+        // The peer is unknown: the family that refused is unknown as well.
+        plan.refused(None);
+        assert!(matches!(
+            plan.next(),
+            Some(Choice::Pinned(AddressFamily::Ipv4))
+        ));
+        plan.refused(None);
+        assert!(matches!(
+            plan.next(),
+            Some(Choice::Pinned(AddressFamily::Ipv6))
+        ));
+        assert!(plan.next().is_none(), "a fourth attempt was planned");
+    }
+
+    /// A repetition uses the other family of the peer that answered.
+    #[test]
+    fn the_plan_repeats_over_the_other_family() {
+        let mut plan = Plan::new(None);
+        assert!(matches!(plan.next(), Some(Choice::Normal)));
+        plan.refused(Some(AddressFamily::Ipv6));
+        assert!(matches!(
+            plan.next(),
+            Some(Choice::Pinned(AddressFamily::Ipv4))
+        ));
+        // The family that refused is spent: it is not tried again.
+        plan.refused(Some(AddressFamily::Ipv4));
+        assert!(plan.next().is_none(), "a third attempt was planned");
+    }
+
+    /// A client whose peer is unknown does not make the download loop for
+    /// ever.
+    ///
+    /// The peer of such a client is unknown, so the family that refused is
+    /// unknown too. The download takes at most three attempts.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_download_ends_when_the_peer_is_unknown() {
+        let path = std::env::temp_dir().join(format!("knownbots-{}.sock", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let listener =
+            std::os::unix::net::UnixListener::bind(&path).expect("the listener of the test");
+        let requests = Arc::new(AtomicUsize::new(0));
+        let counter = requests.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { continue };
+                if read_request(&mut stream) == 0 {
+                    continue;
+                }
+                counter.fetch_add(1, Ordering::SeqCst);
+                let _ = stream.write_all(&refusal());
+                let _ = stream.flush();
+            }
+        });
+        // Every client of the set gets a pool of its own: a connection the
+        // stub closed would be handed out again otherwise.
+        let client = || {
+            reqwest::Client::builder()
+                .no_proxy()
+                .unix_socket(path.as_path())
+                .build()
+                .expect("the client")
+        };
+        let transport = Transport::new(ClientSet::new(client(), client(), client()));
+
+        let downloaded = transport
+            .download("google", &["http://vendor.test/ips.json".to_string()])
+            .await;
+
+        let failure = downloaded.failure.expect("the refresh must fail");
+        assert!(
+            matches!(failure, RefreshFailure::Unreachable(_)),
+            "{failure:?}"
+        );
+        assert_eq!(
+            requests.load(Ordering::SeqCst),
+            3,
+            "the download took more than three attempts"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// The failure of a download carries the URL without its query and without
+    /// its fragment, so that a token of the host does not reach the log.
+    #[tokio::test]
+    async fn the_failure_carries_no_query_and_no_fragment() {
+        let (ipv4, _ipv6) = stubs(Some(forbidden()), None).await;
+        let transport = Transport::new(clients());
+        let url = format!(
+            "http://vendor.test:{}/ips.json?token=secret#part",
+            ipv4.port
+        );
+
+        let downloaded = transport.download("google", &[url]).await;
+
+        let failure = downloaded.failure.expect("the refresh must fail");
+        let message = failure.to_string();
+        assert!(message.contains("ips.json"), "{message}");
+        assert!(!message.contains("token=secret"), "{message}");
+        assert!(!message.contains("#part"), "{message}");
     }
 
     /// The excerpt of a long body is cut and marked.

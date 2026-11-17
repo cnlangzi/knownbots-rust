@@ -149,6 +149,9 @@ mod tests {
     use std::net::SocketAddr;
 
     /// A server that answers with a canned response, on the loopback.
+    ///
+    /// The answer tells the client to close the connection, so that the client
+    /// never reuses a connection the server closed.
     fn server(response: &'static [u8]) -> SocketAddr {
         let listener =
             std::net::TcpListener::bind("127.0.0.1:0").expect("the listener of the test");
@@ -168,7 +171,7 @@ mod tests {
     /// A client that is bound to a family reaches no address of the other one.
     #[tokio::test]
     async fn a_pinned_client_reaches_no_address_of_the_other_family() {
-        let address = server(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        let address = server(b"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
         let url = format!("http://{address}/");
 
         let clients = build_clients().expect("the clients of the crate");

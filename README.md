@@ -570,9 +570,10 @@ and the crate has to follow it. A list that holds no usable prefix at all is
 
 A refusal names what the endpoint answered: the status, the content type and
 the first bytes of the body. A status other than 200 is the answer of the
-endpoint, not a document the crate mis-reads. A refusal that the repetition
-repaired is written to the log, with the URL — without its query and without
-its fragment — the status, the content type and an excerpt of the body.
+endpoint, not a document the crate mis-reads. The URL of a message and of the
+log carries neither a query nor a fragment, so that a token of the host does
+not reach the log. A refusal that the repetition repaired is written to the
+log with the status, the content type and an excerpt of the body.
 
 An entry of a list that holds no usable prefix is skipped; the other entries of
 the document still count. A crawler whose refresh failed keeps the prefixes it

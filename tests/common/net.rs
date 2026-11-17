@@ -9,8 +9,9 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::Arc;
 
-use knownbots::{ClientSet, reqwest};
-use wiremock::MockServer;
+use knownbots::{ClientSet, Validator, ValidatorOptions, reqwest};
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// The host the clients of the tests reach.
 pub const HOST: &str = "vendor.test";
@@ -73,4 +74,74 @@ pub async fn server() -> MockServer {
 /// The URL of a document of the host.
 pub fn url(port: u16) -> String {
     format!("http://{HOST}:{port}/ips.json")
+}
+
+/// A server that refuses the next download, and the validator that downloads
+/// from it.
+///
+/// The first download delivers the list, and the family that delivered it is
+/// remembered for the host. The server refuses the next request once and lists
+/// again afterwards, so that the repetition over the other address family
+/// repairs the refusal.
+///
+/// The URL of the document is built from the port of the server.
+pub async fn refusing_server(
+    url: impl Fn(u16) -> String,
+) -> (MockServer, Arc<Validator>, tempfile::TempDir) {
+    let server = server().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(LIST),
+        )
+        .mount(&server)
+        .await;
+
+    let directory = tempfile::tempdir().expect("a temporary directory");
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).expect("the override directory");
+    std::fs::write(
+        conf.join("testbot.yaml"),
+        format!(
+            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}\"\n",
+            url(server.address().port())
+        ),
+    )
+    .expect("the definition");
+
+    let validator = Validator::new(ValidatorOptions {
+        root: directory.path().to_path_buf(),
+        client_set: Some(clients()),
+        ..ValidatorOptions::default()
+    })
+    .expect("a validator");
+
+    // The first download delivers the list, and the family that delivered it
+    // is remembered for the host.
+    assert!(
+        validator.refresh_bot("testbot").await.is_none(),
+        "the first download must deliver the list"
+    );
+
+    // The server refuses the next request once, and lists again afterwards.
+    server.reset().await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(ResponseTemplate::new(203).set_body_raw("OK", "text/xml"))
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/ips.json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "application/json")
+                .set_body_string(LIST),
+        )
+        .mount(&server)
+        .await;
+
+    (server, validator, directory)
 }

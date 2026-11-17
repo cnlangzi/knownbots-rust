@@ -578,59 +578,7 @@ async fn the_clients_of_the_host_are_used() {
 /// address family, and the list of the second answer is kept.
 #[tokio::test]
 async fn a_refused_document_is_repaired_over_the_other_family() {
-    let server = net::server().await;
-    Mock::given(method("GET"))
-        .and(path("/ips.json"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .insert_header("Content-Type", "application/json")
-                .set_body_string(net::LIST),
-        )
-        .mount(&server)
-        .await;
-
-    let directory = tempfile::tempdir().expect("a temporary directory");
-    let conf = directory.path().join("conf.d");
-    std::fs::create_dir_all(&conf).expect("the override directory");
-    std::fs::write(
-        conf.join("testbot.yaml"),
-        format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}\"\n",
-            net::url(server.address().port())
-        ),
-    )
-    .expect("the definition");
-
-    let validator = Validator::new(ValidatorOptions {
-        root: directory.path().to_path_buf(),
-        client_set: Some(net::clients()),
-        ..ValidatorOptions::default()
-    })
-    .expect("a validator");
-
-    // The first download delivers the list, and the family that delivered it
-    // is remembered for the host.
-    assert!(validator.refresh_bot("testbot").await.is_none());
-    assert_eq!(prefix_count(&validator), 1);
-
-    // The endpoint refuses the next download: the first answer is a refusal,
-    // the second one is the list.
-    server.reset().await;
-    Mock::given(method("GET"))
-        .and(path("/ips.json"))
-        .respond_with(ResponseTemplate::new(203).set_body_raw("OK", "text/xml"))
-        .up_to_n_times(1)
-        .mount(&server)
-        .await;
-    Mock::given(method("GET"))
-        .and(path("/ips.json"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .insert_header("Content-Type", "application/json")
-                .set_body_string(net::LIST),
-        )
-        .mount(&server)
-        .await;
+    let (server, validator, _directory) = net::refusing_server(net::url).await;
 
     assert!(validator.refresh_bot("testbot").await.is_none());
     assert_eq!(prefix_count(&validator), 1);
