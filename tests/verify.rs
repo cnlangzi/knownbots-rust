@@ -57,6 +57,22 @@ const SEMRUSH_SI_UA: &str =
 const SEMRUSH_UA: &str =
     "Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)";
 
+/// The User-Agent Moonshot publishes for the crawler that trains the models of
+/// Kimi.
+const KIMI_BOT_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; KimiBot/1.0; +https://www.kimi.com/policies/kimi-crawlers";
+
+/// The User-Agent Moonshot publishes for the crawler that builds the search
+/// index of Kimi.
+const KIMI_SEARCHBOT_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Kimi-SearchBot/1.0; +https://www.kimi.com/policies/kimi-crawlers";
+
+/// The User-Agent Moonshot publishes for the crawler that fetches the pages a
+/// user asks Kimi about.
+const KIMI_USER_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Kimi-User/1.0; +https://www.kimi.com/policies/kimi-crawlers";
+
+/// The User-Agent Tencent publishes for the crawler that trains the models of
+/// Hy.
+const HYSPIDER_UA: &str = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; HySpider/1.0; +https://hy.tencent.com/polices/hy-crawlers";
+
 #[test]
 fn a_claim_that_names_a_known_crawler_verifies_with_its_address() {
     let (_directory, validator) = validator();
@@ -763,4 +779,93 @@ fn a_claim_of_a_crawler_of_the_reverse_dns_from_an_address_outside_the_domains_f
     );
     assert_eq!(result.status, VerifyStatus::Failed);
     assert!(!result.is_verified());
+}
+
+/// The four crawlers of Moonshot and of Tencent are verified by the address
+/// space their vendors publish.
+///
+/// Each vendor publishes a document for every one of its crawlers, and a
+/// request is verified against the address space of the crawler its marker
+/// names. The three documents of Moonshot hold the same prefixes today — the
+/// vendor publishes one address space for its three crawlers — so the three
+/// crawlers share it; when the vendor gives the three crawlers address spaces
+/// of their own, the registry follows without a change.
+#[test]
+fn the_crawlers_of_moonshot_and_of_tencent_are_verified_by_the_address_space_they_publish() {
+    let (_directory, validator) = validator();
+    for bot in ["kimbot", "kimi-searchbot", "kimi-user"] {
+        validator.seed_prefix(bot, "47.79.253.42/32").unwrap();
+    }
+    validator.seed_prefix("hyspider", "43.144.87.0/24").unwrap();
+
+    let training = validator.verify(KIMI_BOT_UA, ip("47.79.253.42"));
+    assert!(training.is_verified());
+    assert_eq!(training.name, "kimbot");
+    assert_eq!(training.vendor, "Moonshot");
+
+    let search = validator.verify(KIMI_SEARCHBOT_UA, ip("47.79.253.42"));
+    assert!(search.is_verified());
+    assert_eq!(search.name, "kimi-searchbot");
+    assert_eq!(search.vendor, "Moonshot");
+
+    let user = validator.verify(KIMI_USER_UA, ip("47.79.253.42"));
+    assert!(user.is_verified());
+    assert_eq!(user.name, "kimi-user");
+    assert_eq!(user.vendor, "Moonshot");
+
+    let hy = validator.verify(HYSPIDER_UA, ip("43.144.87.10"));
+    assert!(hy.is_verified());
+    assert_eq!(hy.name, "hyspider");
+    assert_eq!(hy.vendor, "Tencent");
+}
+
+/// An address outside the published address space is not a crawler of Moonshot
+/// or of Tencent, even when the request names one.
+#[test]
+fn a_claim_of_a_crawler_of_moonshot_or_of_tencent_from_an_unknown_address_fails_closed() {
+    let (_directory, validator) = validator();
+    for bot in ["kimbot", "kimi-searchbot", "kimi-user"] {
+        validator.seed_prefix(bot, "47.79.253.42/32").unwrap();
+    }
+    validator.seed_prefix("hyspider", "43.144.87.0/24").unwrap();
+
+    for ua in [KIMI_BOT_UA, KIMI_SEARCHBOT_UA, KIMI_USER_UA, HYSPIDER_UA] {
+        let result = validator.verify(ua, ip("203.0.113.7"));
+        assert_eq!(result.status, VerifyStatus::Failed);
+        assert!(!result.is_verified());
+    }
+}
+
+/// Every crawler of Moonshot is verified against the document of its own.
+///
+/// The vendor publishes a document for every one of its crawlers, and each
+/// crawler is verified against the document it names. The three documents hold
+/// the same prefixes today, so the seeds below are synthetic: they give each
+/// crawler an address that the other two do not hold, to show that the
+/// documents are read per crawler. When the vendor gives the three crawlers
+/// address spaces of their own, a request that names one crawler and comes
+/// from the address of another claims a crawler it is not, and it fails closed.
+#[test]
+fn every_crawler_of_moonshot_is_verified_against_its_own_document() {
+    let (_directory, validator) = validator();
+    validator.seed_prefix("kimbot", "198.51.100.10/32").unwrap();
+    validator
+        .seed_prefix("kimi-searchbot", "198.51.100.20/32")
+        .unwrap();
+    validator
+        .seed_prefix("kimi-user", "198.51.100.30/32")
+        .unwrap();
+
+    let search = validator.verify(KIMI_SEARCHBOT_UA, ip("198.51.100.10"));
+    assert_eq!(search.status, VerifyStatus::Failed);
+    assert!(!search.is_verified());
+
+    let training = validator.verify(KIMI_BOT_UA, ip("198.51.100.20"));
+    assert_eq!(training.status, VerifyStatus::Failed);
+    assert!(!training.is_verified());
+
+    let user = validator.verify(KIMI_USER_UA, ip("198.51.100.30"));
+    assert!(user.is_verified());
+    assert_eq!(user.name, "kimi-user");
+    assert_eq!(user.vendor, "Moonshot");
 }

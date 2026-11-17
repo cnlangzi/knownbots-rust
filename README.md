@@ -315,6 +315,10 @@ is compiled into the crate.
 | googleproducer | Google | SearchEngine | GoogleProducer | list |
 | gptbot | OpenAI | AITraining | GPTBot | list |
 | hetrixtools | HetrixTools | Monitor | HetrixTools | dns |
+| hyspider | Tencent | AITraining | HySpider | list |
+| kimbot | Moonshot | AITraining | KimiBot | list |
+| kimi-searchbot | Moonshot | AIAssist | Kimi-SearchBot | list |
+| kimi-user | Moonshot | AIAssist | Kimi-User | list |
 | linkedinbot | LinkedIn | SocialMedia | LinkedInBot | dns |
 | mediapartners-google | Google | Monitor | Mediapartners-Google | list |
 | meta-externalagent | Meta | AITraining | meta-externalagent | dns |
