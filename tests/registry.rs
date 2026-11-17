@@ -92,7 +92,7 @@ fn numbers(text: &str) -> Vec<usize> {
 #[test]
 fn the_embedded_definitions_load() {
     let bots = load_bots(None).expect("the embedded definitions must load");
-    assert_eq!(bots.len(), 75, "loaded {} bots", bots.len());
+    assert_eq!(bots.len(), 79, "loaded {} bots", bots.len());
     assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     assert!(bots.iter().any(|bot| bot.name == "claudebot"));
     assert!(bots.iter().any(|bot| bot.name == "mediapartners-google"));
@@ -295,6 +295,10 @@ fn the_vendor_of_a_bot_is_guessed_from_its_name() {
     assert_eq!(vendor_for("semrushbot-swa"), "Semrush");
     assert_eq!(vendor_for("siteauditbot"), "Semrush");
     assert_eq!(vendor_for("splitsignalbot"), "Semrush");
+    assert_eq!(vendor_for("kimbot"), "Moonshot");
+    assert_eq!(vendor_for("kimi-searchbot"), "Moonshot");
+    assert_eq!(vendor_for("kimi-user"), "Moonshot");
+    assert_eq!(vendor_for("hyspider"), "Tencent");
     assert_eq!(vendor_for("a-bot-that-does-not-exist"), "Unknown");
 }
 
@@ -547,6 +551,108 @@ fn the_definitions_of_the_crawlers_of_duckduck_go_hold_their_fields() {
         search.domains.is_empty(),
         "the crawler has no reverse DNS source"
     );
+}
+
+/// The definitions of the crawlers of Moonshot and of Tencent hold the fields
+/// the vendors publish.
+///
+/// A crawler the registry does not name is a crawler no host can recognise, and
+/// a crawler that is verified by a source the vendor does not publish is
+/// verified by a rule broader than the vendor's. Each of these vendors
+/// publishes the address space of every one of its crawlers and keeps no
+/// reverse name for them, so the definition names the document alone.
+#[test]
+fn the_definitions_of_the_crawlers_of_moonshot_and_of_tencent_hold_their_fields() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let training = bots
+        .iter()
+        .find(|bot| bot.name == "kimbot")
+        .expect("kimbot in the registry");
+    assert_eq!(training.kind, BotKind::AITraining);
+    assert_eq!(training.vendor, "Moonshot");
+    assert_eq!(training.ua, "KimiBot");
+    assert_eq!(training.parser, "google");
+    assert_eq!(training.urls, ["https://www.kimi.ai/policies/kimibot.json"]);
+    assert!(
+        !training.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        training.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        training.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+    assert_eq!(training.sample, None);
+
+    let search = bots
+        .iter()
+        .find(|bot| bot.name == "kimi-searchbot")
+        .expect("kimi-searchbot in the registry");
+    assert_eq!(search.kind, BotKind::AIAssist);
+    assert_eq!(search.vendor, "Moonshot");
+    assert_eq!(search.ua, "Kimi-SearchBot");
+    assert_eq!(search.parser, "google");
+    assert_eq!(
+        search.urls,
+        ["https://www.kimi.ai/policies/kimi-searchbot.json"]
+    );
+    assert!(
+        !search.rdns,
+        "the crawler is verified by its published list"
+    );
+    assert!(
+        search.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        search.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+    assert_eq!(search.sample, None);
+
+    let user = bots
+        .iter()
+        .find(|bot| bot.name == "kimi-user")
+        .expect("kimi-user in the registry");
+    assert_eq!(user.kind, BotKind::AIAssist);
+    assert_eq!(user.vendor, "Moonshot");
+    assert_eq!(user.ua, "Kimi-User");
+    assert_eq!(user.parser, "google");
+    assert_eq!(user.urls, ["https://www.kimi.ai/policies/kimi-user.json"]);
+    assert!(!user.rdns, "the crawler is verified by its published list");
+    assert!(
+        user.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        user.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+    assert_eq!(user.sample, None);
+
+    let hy = bots
+        .iter()
+        .find(|bot| bot.name == "hyspider")
+        .expect("hyspider in the registry");
+    assert_eq!(hy.kind, BotKind::AITraining);
+    assert_eq!(hy.vendor, "Tencent");
+    assert_eq!(hy.ua, "HySpider");
+    assert_eq!(hy.parser, "google");
+    assert_eq!(hy.urls, ["https://hy.tencent.com/policy/hyspider.json"]);
+    assert!(!hy.rdns, "the crawler is verified by its published list");
+    assert!(
+        hy.domains.is_empty(),
+        "the crawler has no reverse DNS source"
+    );
+    assert!(
+        hy.custom.is_empty(),
+        "the crawler states no prefix of its own"
+    );
+    assert_eq!(hy.sample, None);
 }
 
 /// The definition of the crawler of You.com holds the fields the vendor

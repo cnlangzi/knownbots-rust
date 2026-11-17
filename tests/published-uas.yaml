@@ -192,6 +192,22 @@ hetrixtools:
   url: "https://hetrixtools.com/uptime-monitor-bot/"
   ua:
     - "HetrixTools Uptime Monitoring Bot. https://hetrix.tools/uptime-monitoring-bot.html"
+hyspider:
+  url: "https://hy.tencent.com/polices/hy-crawlers"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; HySpider/1.0; +https://hy.tencent.com/polices/hy-crawlers"
+kimbot:
+  url: "https://www.kimi.com/policies/kimi-crawlers"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; KimiBot/1.0; +https://www.kimi.com/policies/kimi-crawlers"
+kimi-searchbot:
+  url: "https://www.kimi.com/policies/kimi-crawlers"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Kimi-SearchBot/1.0; +https://www.kimi.com/policies/kimi-crawlers"
+kimi-user:
+  url: "https://www.kimi.com/policies/kimi-crawlers"
+  ua:
+    - "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Kimi-User/1.0; +https://www.kimi.com/policies/kimi-crawlers"
 linkedinbot:
   url: "https://www.linkedin.com/robots.txt"
   ua:

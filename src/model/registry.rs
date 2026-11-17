@@ -156,6 +156,16 @@ pub const EMBEDDED_CONFIGS: &[(&str, &str)] = &[
         "hetrixtools.yaml",
         include_str!("../../conf.d/hetrixtools.yaml"),
     ),
+    ("hyspider.yaml", include_str!("../../conf.d/hyspider.yaml")),
+    ("kimbot.yaml", include_str!("../../conf.d/kimbot.yaml")),
+    (
+        "kimi-searchbot.yaml",
+        include_str!("../../conf.d/kimi-searchbot.yaml"),
+    ),
+    (
+        "kimi-user.yaml",
+        include_str!("../../conf.d/kimi-user.yaml"),
+    ),
     (
         "linkedinbot.yaml",
         include_str!("../../conf.d/linkedinbot.yaml"),
@@ -478,6 +488,8 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         "hetrixtools" => "HetrixTools",
         "seokicks" => "SEOkicks",
         "sitebulb" => "Sitebulb",
+        "kimbot" | "kimi-searchbot" | "kimi-user" => "Moonshot",
+        "hyspider" => "Tencent",
         _ => "Unknown",
     }
 }

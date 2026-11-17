@@ -1,0 +1,10 @@
+# HySpider - Tencent Hunyuan training crawler
+# https://hy.tencent.com/polices/hy-crawlers
+# JSON format: https://hy.tencent.com/policy/hyspider.json
+kind: AITraining
+name: hyspider
+vendor: "Tencent"
+parser: google
+ua: "HySpider"
+urls:
+  - "https://hy.tencent.com/policy/hyspider.json"

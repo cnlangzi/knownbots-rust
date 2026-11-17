@@ -1,0 +1,10 @@
+# Kimi-User - Moonshot AI user-triggered crawler
+# https://www.kimi.com/policies/kimi-crawlers
+# JSON format: https://www.kimi.ai/policies/kimi-user.json
+kind: AIAssist
+name: kimi-user
+vendor: "Moonshot"
+parser: google
+ua: "Kimi-User"
+urls:
+  - "https://www.kimi.ai/policies/kimi-user.json"

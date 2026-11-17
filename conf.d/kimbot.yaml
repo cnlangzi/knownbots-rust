@@ -1,0 +1,10 @@
+# KimiBot - Moonshot AI training crawler
+# https://www.kimi.com/policies/kimi-crawlers
+# JSON format: https://www.kimi.ai/policies/kimibot.json
+kind: AITraining
+name: kimbot
+vendor: "Moonshot"
+parser: google
+ua: "KimiBot"
+urls:
+  - "https://www.kimi.ai/policies/kimibot.json"

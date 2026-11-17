@@ -1,0 +1,10 @@
+# Kimi-SearchBot - Moonshot AI search index crawler
+# https://www.kimi.com/policies/kimi-crawlers
+# JSON format: https://www.kimi.ai/policies/kimi-searchbot.json
+kind: AIAssist
+name: kimi-searchbot
+vendor: "Moonshot"
+parser: google
+ua: "Kimi-SearchBot"
+urls:
+  - "https://www.kimi.ai/policies/kimi-searchbot.json"
