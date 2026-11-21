@@ -3,6 +3,7 @@
 # JSON format: https://www.kimi.ai/policies/kimi-searchbot.json
 # Shares the address list of KimiBot and of Kimi-User — a document per crawler, holding the same prefixes today; the list uses Google-style ipv4Prefix fields.
 kind: AIAssist
+category: ai_bot
 name: kimi-searchbot
 vendor: "Moonshot"
 parser: google

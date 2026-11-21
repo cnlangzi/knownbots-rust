@@ -2,6 +2,7 @@
 # Official UA: SemrushBot (S and B must be uppercase)
 # https://www.semrush.com/bot.html
 kind: SEO
+category: search_engine
 name: semrushbot
 vendor: "Semrush"
 ua: "SemrushBot"

@@ -2,6 +2,7 @@
 # Official UA: CensysInspect/1.1
 # https://docs.censys.com/docs/opt-out-of-data-collection
 kind: Security
+category: monitoring
 name: censysinspect
 vendor: "Censys"
 ua: "CensysInspect"

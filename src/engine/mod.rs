@@ -524,6 +524,7 @@ impl Validator {
                     name: bot.name.clone(),
                     vendor: bot.vendor.clone(),
                     kind: bot.kind,
+                    category: bot.category,
                     prefixes,
                     state,
                     error,
@@ -638,6 +639,7 @@ impl Drop for Validator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::category::BotCategory;
     use std::net::Ipv4Addr;
 
     fn google_ua() -> &'static str {
@@ -682,6 +684,46 @@ mod tests {
         let ip = IpAddr::V4(Ipv4Addr::new(66, 249, 66, 1));
         let result = validator.verify("Mozilla/5.0 Chrome/120.0", ip);
         assert_eq!(result.status, VerifyStatus::Unknown);
+    }
+
+    /// The category of a crawler reaches the result of a verification.
+    ///
+    /// Only a verified result carries a category: a request that matched no
+    /// crawler has no bucket, and a request that was not verified is not the
+    /// crawler it named.
+    #[test]
+    fn only_a_verified_result_carries_a_category() {
+        let directory = tempfile::tempdir().unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
+        validator
+            .seed_prefix("googlebot", "66.249.64.0/19")
+            .unwrap();
+        let ip = IpAddr::V4(Ipv4Addr::new(66, 249, 66, 1));
+
+        let verified = validator.verify(google_ua(), ip);
+        assert!(verified.is_verified());
+        assert_eq!(verified.category, Some(BotCategory::SearchEngine));
+
+        let failed = validator.verify(google_ua(), IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4)));
+        assert_eq!(failed.status, VerifyStatus::Failed);
+        assert_eq!(failed.category, None);
+
+        let unknown = validator.verify("Mozilla/5.0 Chrome/120.0", ip);
+        assert_eq!(unknown.status, VerifyStatus::Unknown);
+        assert_eq!(unknown.category, None);
+    }
+
+    /// The status of the address space of a crawler carries its category.
+    #[test]
+    fn the_status_of_a_crawler_carries_its_category() {
+        let directory = tempfile::tempdir().unwrap();
+        let validator = Validator::with_root(directory.path()).unwrap();
+        let status = validator
+            .refresh_status()
+            .into_iter()
+            .find(|status| status.name == "googlebot")
+            .expect("a status for googlebot");
+        assert_eq!(status.category, BotCategory::SearchEngine);
     }
 
     #[test]
@@ -827,7 +869,7 @@ mod tests {
         std::fs::create_dir_all(&conf).unwrap();
         std::fs::write(
             conf.join("custombot.yaml"),
-            "name: custombot\nua: \"CustomBot\"\nvendor: \"Example\"\ncustom:\n  - \"31.13.24.0/24\"\n",
+            "name: custombot\ncategory: monitoring\nua: \"CustomBot\"\nvendor: \"Example\"\ncustom:\n  - \"31.13.24.0/24\"\n",
         )
         .unwrap();
         let validator = Validator::with_root(directory.path()).unwrap();
@@ -852,7 +894,7 @@ mod tests {
         std::fs::write(&broken, "name: brokenbot\n  ua: [unclosed\n").unwrap();
         std::fs::write(
             conf.join("goodbot.yaml"),
-            "name: goodbot\nua: \"GoodBot\"\nvendor: \"Example\"\n",
+            "name: goodbot\ncategory: monitoring\nua: \"GoodBot\"\nvendor: \"Example\"\n",
         )
         .unwrap();
 
@@ -896,7 +938,7 @@ mod tests {
         write_override(
             directory.path(),
             "listbot",
-            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+            "name: listbot\ncategory: monitoring\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
         );
         let bot_dir = directory.path().join("listbot");
         std::fs::create_dir_all(&bot_dir).unwrap();
@@ -947,7 +989,7 @@ mod tests {
         write_override(
             directory.path(),
             "listbot",
-            "name: listbot\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
+            "name: listbot\ncategory: monitoring\nua: \"ListBot\"\nvendor: \"Example\"\nurls:\n  - \"https://example.invalid/listbot.json\"\n",
         );
         let bot_dir = directory.path().join("listbot");
         std::fs::create_dir_all(&bot_dir).unwrap();

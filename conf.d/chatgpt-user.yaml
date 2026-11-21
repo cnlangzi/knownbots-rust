@@ -2,6 +2,7 @@
 # https://developers.openai.com/api/docs/bots
 # JSON format: https://openai.com/chatgpt-user.json
 kind: AIAssist
+category: ai_bot
 name: chatgpt-user
 vendor: "OpenAI"
 parser: google

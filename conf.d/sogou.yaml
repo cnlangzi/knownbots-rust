@@ -2,6 +2,7 @@
 # https://www.sogou.com/docs/help/webmasters.htm#04
 # Verification: RDNS (no official IP list available)
 kind: SearchEngine
+category: search_engine
 name: sogou
 vendor: "Sogou"
 ua: "Sogou"

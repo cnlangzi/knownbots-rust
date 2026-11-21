@@ -119,7 +119,7 @@ struct Row {
     name: String,
     /// The organisation that owns the entry.
     vendor: String,
-    /// The category of the entry.
+    /// The kind of the entry.
     kind: String,
     /// The kind of the source the entry depends on.
     source: Source,

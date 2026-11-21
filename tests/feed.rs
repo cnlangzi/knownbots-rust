@@ -31,7 +31,7 @@ async fn validator_for(server: &MockServer, parser: &str) -> (tempfile::TempDir,
     std::fs::write(
         conf.join("testbot.yaml"),
         format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: {parser}\nurls:\n  - \"{}/ips.json\"\n",
+            "name: testbot\ncategory: monitoring\nua: \"TestBot\"\nvendor: \"Example\"\nparser: {parser}\nurls:\n  - \"{}/ips.json\"\n",
             server.uri()
         ),
     )
@@ -495,7 +495,7 @@ async fn the_prefixes_of_the_documents_that_answered_are_kept() {
     std::fs::write(
         conf.join("testbot.yaml"),
         format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n  - \"{}/broken.json\"\n",
+            "name: testbot\ncategory: monitoring\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n  - \"{}/broken.json\"\n",
             server.uri(),
             server.uri()
         ),
@@ -547,7 +547,7 @@ async fn the_clients_of_the_host_are_used() {
     std::fs::write(
         conf.join("testbot.yaml"),
         format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n",
+            "name: testbot\ncategory: monitoring\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n",
             server.uri()
         ),
     )

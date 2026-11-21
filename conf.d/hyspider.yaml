@@ -2,6 +2,7 @@
 # https://hy.tencent.com/polices/hy-crawlers
 # JSON format: https://hy.tencent.com/policy/hyspider.json
 kind: AITraining
+category: ai_bot
 name: hyspider
 vendor: "Tencent"
 parser: google

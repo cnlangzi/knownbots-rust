@@ -290,8 +290,8 @@ enum Loaded {
 ///
 /// A syntax error is an error — the caller decides whether that is fatal (an
 /// embedded definition) or skippable (an operator override). A document that
-/// parses but lacks `name` / `ua` is skipped with the reason, so that the
-/// operator learns why their bot is missing.
+/// parses but lacks `name` / `ua` / `category` is skipped with the reason, so
+/// that the operator learns why their bot is missing.
 fn parse_definition(data: &str, filename: &str) -> Result<Loaded, ConfigError> {
     let definition: BotDefinition = serde_yaml::from_str(data).map_err(|error| {
         ConfigError::Registry(format!("parse bot config {filename}: {error:#}"))
@@ -302,7 +302,14 @@ fn parse_definition(data: &str, filename: &str) -> Result<Loaded, ConfigError> {
     if definition.ua.is_empty() {
         return Ok(Loaded::Skipped("missing required 'ua' field".to_string()));
     }
-    Ok(Loaded::Bot(Box::new(Bot::from_definition(definition))))
+    let Some(category) = definition.category else {
+        return Ok(Loaded::Skipped(
+            "missing required 'category' field".to_string(),
+        ));
+    };
+    Ok(Loaded::Bot(Box::new(Bot::from_definition(
+        definition, category,
+    ))))
 }
 
 /// Loads the embedded definitions.
@@ -441,7 +448,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         n if n.starts_with("google")
             || n.starts_with("adsbot")
             || n.starts_with("apis-")
-            || n.starts_with("mediapartners")
+            || n.starts_with("mediapartners-")
             || n.starts_with("feedfetcher") =>
         {
             "Google"
@@ -499,6 +506,8 @@ mod tests {
     use super::*;
     use crate::feed::is_known_parser;
     use crate::index::prefix;
+    use crate::model::bot::BotKind;
+    use crate::model::category::BotCategory;
     use ipnet::IpNet;
     use std::collections::HashSet;
     use std::net::IpAddr;
@@ -548,7 +557,7 @@ mod tests {
         std::fs::create_dir_all(&conf).unwrap();
         std::fs::write(
             conf.join("custombot.yaml"),
-            "name: custombot\nua: \"CustomBot\"\nvendor: \"Example\"\n",
+            "name: custombot\ncategory: monitoring\nua: \"CustomBot\"\nvendor: \"Example\"\n",
         )
         .unwrap();
         let bots = load_bots(Some(directory.path())).unwrap();
@@ -566,7 +575,7 @@ mod tests {
         std::fs::create_dir_all(&conf).unwrap();
         std::fs::write(
             conf.join("typo.yaml"),
-            "name: typobot\nua: \"TypoBot\"\nparser: googel\nurls:\n  - \"https://example.invalid/ips.json\"\n",
+            "name: typobot\ncategory: monitoring\nua: \"TypoBot\"\nparser: googel\nurls:\n  - \"https://example.invalid/ips.json\"\n",
         )
         .unwrap();
         let bots = load_bots(Some(directory.path())).unwrap();
@@ -587,7 +596,7 @@ mod tests {
         std::fs::write(&broken, "name: brokenbot\n  ua: [unclosed\n").unwrap();
         std::fs::write(
             conf.join("goodbot.yaml"),
-            "name: goodbot\nua: \"GoodBot\"\nvendor: \"Example\"\n",
+            "name: goodbot\ncategory: monitoring\nua: \"GoodBot\"\nvendor: \"Example\"\n",
         )
         .unwrap();
 
@@ -684,6 +693,46 @@ mod tests {
         assert!(bots.iter().any(|bot| bot.name == "googlebot"));
     }
 
+    /// A definition that states no category is incomplete.
+    ///
+    /// The bucket of a crawler is a fact of its definition, and the crate never
+    /// guesses it: a definition that names no category leaves the crawler
+    /// without one. An embedded definition fails the load, and a definition of
+    /// a host is skipped and reported.
+    #[test]
+    fn a_definition_without_a_category_is_incomplete() {
+        let error = load_embedded(&[(
+            "googlebot.yaml",
+            "name: googlebot\nua: \"Googlebot\"\nkind: SearchEngine\n",
+        )])
+        .expect_err("an embedded definition without a category must fail the loader");
+        let message = format!("{error}");
+        assert!(
+            message.contains("missing required 'category' field"),
+            "the error must name the missing field: {message}"
+        );
+        assert!(
+            message.contains("googlebot.yaml"),
+            "the error must name the file: {message}"
+        );
+    }
+
+    /// A definition of a host that states no category is skipped and reported.
+    #[test]
+    fn an_override_without_a_category_is_skipped_and_reported() {
+        let directory = tempfile::tempdir().unwrap();
+        let conf = directory.path().join("conf.d");
+        std::fs::create_dir_all(&conf).unwrap();
+        let path = conf.join("bucketless.yaml");
+        std::fs::write(&path, "name: bucketless\nua: \"Bucketless\"\n").unwrap();
+
+        let (bots, errors) = load_bots_with_errors(Some(directory.path())).unwrap();
+        assert!(!bots.iter().any(|bot| bot.name == "bucketless"));
+        assert_eq!(errors.len(), 1, "errors: {errors:?}");
+        assert_eq!(errors[0].path, path.display().to_string());
+        assert_eq!(errors[0].message, "missing required 'category' field");
+    }
+
     /// True when a `domains:` entry can still match a PTR record.
     ///
     /// [`crate::model::rdns::match_domain`] normalises every entry by stripping
@@ -718,6 +767,22 @@ mod tests {
 
         assert!(!domain_is_usable(" example.com"));
         assert!(!domain_is_usable("example .com"));
+    }
+
+    /// The categories the kind of a crawler allows.
+    ///
+    /// The relation between a kind and a category lives here and nowhere else:
+    /// the crate holds no code that translates one into the other. The match is
+    /// exhaustive over the kinds, so a kind the crate gains stops the test
+    /// until this table names it.
+    fn categories_of_kind(kind: BotKind) -> &'static [BotCategory] {
+        match kind {
+            BotKind::SearchEngine | BotKind::SEO => &[BotCategory::SearchEngine],
+            BotKind::AITraining | BotKind::AIAssist | BotKind::AIMixed => &[BotCategory::AiBot],
+            BotKind::SocialMedia => &[BotCategory::Social],
+            BotKind::Monitor => &[BotCategory::Monitoring, BotCategory::AdsBot],
+            BotKind::Security | BotKind::Scraper | BotKind::Unknown => &[BotCategory::Monitoring],
+        }
     }
 
     /// The contract every embedded definition has to satisfy.
@@ -768,6 +833,23 @@ mod tests {
             // the bot would never verify.
             if definition.ua.is_empty() {
                 violations.push(format!("{filename}: missing ua"));
+            }
+
+            // The definition states the category of its crawler, and the
+            // category is one the kind of the crawler allows. A definition
+            // that names no category is incomplete — the loader skips it, so
+            // the crawler would never reach the registry.
+            match definition.category {
+                None => violations.push(format!("{filename}: missing category")),
+                Some(category) => {
+                    if !categories_of_kind(definition.kind).contains(&category) {
+                        violations.push(format!(
+                            "{filename}: the category {} is not one the kind {:?} allows",
+                            category.as_str(),
+                            definition.kind
+                        ));
+                    }
+                }
             }
 
             // An RDNS bot needs a domain list it can actually match. Without

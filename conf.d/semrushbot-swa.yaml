@@ -2,6 +2,7 @@
 # Official UA: SemrushBot-SWA
 # https://www.semrush.com/bot.html
 kind: SEO
+category: search_engine
 name: semrushbot-swa
 vendor: "Semrush"
 ua: "SemrushBot-SWA"

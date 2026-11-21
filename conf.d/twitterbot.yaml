@@ -1,6 +1,7 @@
 # Twitter/X link preview bot
 # https://developer.x.com/en/docs/x-robots-twitterbot
 kind: SocialMedia
+category: social
 name: twitterbot
 vendor: "Twitter"
 ua: "Twitterbot"

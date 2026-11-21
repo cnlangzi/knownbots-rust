@@ -2,6 +2,7 @@
 # https://docs.mistral.ai/robots
 # JSON format: https://mistral.ai/mistralai-index-ips.json
 kind: AIAssist
+category: ai_bot
 name: mistralai-index
 vendor: "Mistral"
 parser: google

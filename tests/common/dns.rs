@@ -17,7 +17,7 @@ use knownbots::BotKind;
 pub struct DnsCrawler {
     /// The id of the crawler in the registry.
     pub name: &'static str,
-    /// The category of the crawler.
+    /// The kind of the crawler.
     pub kind: BotKind,
     /// The organisation that owns the crawler.
     pub vendor: &'static str,

@@ -2,6 +2,7 @@
 # https://www.bing.com/webmasters/help/verify-bingbot-2195837f
 # JSON format: https://www.bing.com/toolbox/bingbot.json
 kind: SearchEngine
+category: search_engine
 name: bingbot
 vendor: "Microsoft"
 parser: google

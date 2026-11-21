@@ -1,6 +1,7 @@
 # Mediapartners-Google - AdSense content crawler
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers#adsense
 kind: Monitor
+category: ads_bot
 name: mediapartners-google
 vendor: "Google"
 parser: google

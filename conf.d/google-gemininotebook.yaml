@@ -1,6 +1,7 @@
 # Google-GeminiNotebook - Fetches the sources a Gemini Notebook user adds
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#gemini-notebook
 kind: AIAssist
+category: ai_bot
 name: google-gemininotebook
 vendor: "Google"
 parser: google

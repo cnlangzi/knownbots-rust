@@ -1,6 +1,7 @@
 # Cloudflare Health Checks crawler
 # Monitors origin server availability
 kind: Monitor
+category: monitoring
 name: cloudflare-healthchecks
 vendor: "Cloudflare"
 ua: "Cloudflare-Healthchecks"

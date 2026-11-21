@@ -2,6 +2,7 @@
 # https://developers.openai.com/api/docs/bots
 # JSON format: https://openai.com/adsbot.json
 kind: Monitor
+category: ads_bot
 name: oai-adsbot
 vendor: "OpenAI"
 parser: google

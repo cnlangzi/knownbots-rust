@@ -2,6 +2,7 @@
 # Official UA: SiteAuditBot
 # https://www.semrush.com/bot.html
 kind: SEO
+category: search_engine
 name: siteauditbot
 vendor: "Semrush"
 ua: "SiteAuditBot"

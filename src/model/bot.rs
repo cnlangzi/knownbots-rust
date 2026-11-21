@@ -11,14 +11,17 @@ use serde::Deserialize;
 
 use crate::error::ConfigError;
 use crate::index::prefix;
+use crate::model::category::BotCategory;
 use crate::model::lru::FailLru;
 use crate::model::rdns::RdnsCache;
 use crate::model::registry::vendor_for;
 
-/// The category of a bot, taken from the `kind` field of its definition.
+/// The kind of a bot, taken from the `kind` field of its definition.
 ///
-/// The category is the coarse classification the upstream publishes. It says
+/// The kind is the fine-grained classification the upstream publishes. It says
 /// what kind of crawler a bot is, not who owns it — that is [`Bot::vendor`].
+/// The coarse bucket the crate groups the bot into is its
+/// [`category`](Bot::category).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Default)]
 pub enum BotKind {
     /// A crawler of a search engine.
@@ -39,7 +42,7 @@ pub enum BotKind {
     Security,
     /// A crawler that collects pages without a published address space.
     Scraper,
-    /// A bot whose definition names no category.
+    /// A bot whose definition names no kind.
     #[default]
     #[serde(other)]
     Unknown,
@@ -56,8 +59,10 @@ pub enum BotKind {
 pub struct Bot {
     /// The id of the bot in the registry (`googlebot`).
     pub name: String,
-    /// The category of the bot.
+    /// The kind of the bot.
     pub kind: BotKind,
+    /// The coarse bucket the bot is grouped into.
+    pub category: BotCategory,
     /// The parser that reads the published list of the bot.
     pub parser: String,
     /// The marker the `User-Agent` of a request has to carry.
@@ -92,7 +97,10 @@ pub struct Bot {
 
 impl Bot {
     /// Builds a bot from its definition.
-    pub(crate) fn from_definition(definition: BotDefinition) -> Self {
+    ///
+    /// The category is passed in rather than taken out of the definition: the
+    /// loader resolves it, so that no code of the crate unwraps an option.
+    pub(crate) fn from_definition(definition: BotDefinition, category: BotCategory) -> Self {
         // An empty parser means "no structured format" — plain CIDR lines.
         // Substituting the name of the bot used to look like a custom parser
         // and then silently hit the text fallback inside the parser.
@@ -150,6 +158,7 @@ impl Bot {
         Self {
             name: definition.name,
             kind: definition.kind,
+            category,
             parser,
             ua: definition.ua,
             vendor,
@@ -257,6 +266,7 @@ impl std::fmt::Debug for Bot {
         f.debug_struct("Bot")
             .field("name", &self.name)
             .field("kind", &self.kind)
+            .field("category", &self.category)
             .field("parser", &self.parser)
             .field("ua", &self.ua)
             .field("vendor", &self.vendor)
@@ -273,6 +283,10 @@ pub(crate) struct BotDefinition {
     pub(crate) name: String,
     #[serde(default)]
     pub(crate) kind: BotKind,
+    /// The coarse bucket of the bot. A definition that names no category is
+    /// incomplete.
+    #[serde(default)]
+    pub(crate) category: Option<BotCategory>,
     #[serde(default)]
     pub(crate) parser: String,
     #[serde(default)]
@@ -319,6 +333,7 @@ mod tests {
         BotDefinition {
             name: "testbot".into(),
             kind: BotKind::SearchEngine,
+            category: Some(BotCategory::SearchEngine),
             parser: "google".into(),
             ua: "TestBot".into(),
             vendor: "Example".into(),
@@ -331,7 +346,7 @@ mod tests {
     }
 
     fn bot_with_custom() -> Bot {
-        Bot::from_definition(definition())
+        Bot::from_definition(definition(), BotCategory::SearchEngine)
     }
 
     /// The sample of a definition is the address the crawler was confirmed
@@ -341,12 +356,12 @@ mod tests {
     fn the_sample_of_the_definition_is_an_address() {
         let mut confirmed = definition();
         confirmed.sample = Some("162.142.125.1".into());
-        let bot = Bot::from_definition(confirmed);
+        let bot = Bot::from_definition(confirmed, BotCategory::SearchEngine);
         assert_eq!(bot.sample, Some("162.142.125.1".parse::<IpAddr>().unwrap()));
 
         let mut broken = definition();
         broken.sample = Some("not-an-address".into());
-        let bot = Bot::from_definition(broken);
+        let bot = Bot::from_definition(broken, BotCategory::SearchEngine);
         assert_eq!(bot.sample, None);
     }
 

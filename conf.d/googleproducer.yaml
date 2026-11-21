@@ -1,6 +1,7 @@
 # GoogleProducer - Publisher feeds for the landing pages of Google News
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#googleproducer
 kind: SearchEngine
+category: search_engine
 name: googleproducer
 vendor: "Google"
 parser: google

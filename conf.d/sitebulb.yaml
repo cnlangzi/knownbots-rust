@@ -2,6 +2,7 @@
 # Official UA: Sitebulb/1.1
 # https://support.sitebulb.com/en/articles/9993764-sitebulb-s-user-agent
 kind: SEO
+category: search_engine
 name: sitebulb
 vendor: "Sitebulb"
 ua: "Sitebulb"

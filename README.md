@@ -118,9 +118,10 @@ method `Validator::shutdown` stops the background work.
 
 Only `Verified` says that the request is the crawler it claims to be.
 
-The identity of the crawler — the `name` and the `vendor` of the result — is
-filled **only** for a `Verified` result. Every other status leaves the two
-fields empty, so a host never reads the name of a crawler it did not verify.
+The identity of the crawler — the `name`, the `vendor` and the `category` of
+the result — is filled **only** for a `Verified` result. Every other status
+leaves the fields empty, so a host never reads the name of a crawler it did not
+verify.
 
 The two builds differ in one place: a cold reverse-DNS cache answers `Pending`
 with the `full` feature and `Failed` without it, because the lookup that would
@@ -366,6 +367,7 @@ A definition is a YAML document:
 
 ```yaml
 kind: SearchEngine
+category: search_engine
 name: googlebot
 vendor: "Google"
 parser: google
@@ -376,7 +378,8 @@ urls:
 
 | field | meaning |
 |---|---|
-| `kind` | The category of the crawler. |
+| `kind` | The kind of the crawler. |
+| `category` | The category of the crawler. |
 | `name` | The id of the crawler in the registry. |
 | `vendor` | The organisation that owns the crawler. |
 | `parser` | The parser that reads the published list. Absent means the text parser. |
@@ -386,6 +389,13 @@ urls:
 | `domains` | The domains the reverse DNS of the crawler has to end in. |
 | `sample` | The address the crawler was confirmed with. Its reverse name resolves under one of the `domains` and resolves forward back to the address. |
 | `rdns` | Whether the crawler carries a reverse DNS of its own. |
+
+The `kind` of a crawler is what it does on the web — the word the upstream
+publishes. The `category` of a crawler is the coarse bucket the crate groups
+it into: `search_engine`, `ai_bot`, `social`, `monitoring` and `ads_bot`. The
+crate owns that vocabulary, and a host that persists a category uses the label
+of the crate. The two are facts of their own: the category is never derived
+from the kind, and a definition that states no category is incomplete.
 
 The parsers the crate knows are:
 
@@ -403,6 +413,7 @@ to:
 
 ```yaml
 kind: SearchEngine
+category: search_engine
 name: baiduspider
 vendor: "Baidu"
 ua: "Baiduspider"
@@ -431,7 +442,9 @@ label — it appears in the error messages of a definition that was skipped.
 
 A definition of the host that cannot be read or parsed is skipped and reported
 by `Validator::config_errors()`. A typo in a definition of the host never
-takes the host down; the rest of the registry loads as usual.
+takes the host down; the rest of the registry loads as usual. A definition that
+states no `category` is skipped the same way, with the reason
+`missing required 'category' field`.
 
 An incomplete embedded definition is the opposite: it fails the construction
 of the validator, because a crawler that silently disappears from the registry
@@ -526,7 +539,8 @@ fn main() {
 - `match_domain` answers whether a hostname is the domain or a subdomain of it.
 - `feed::parse` turns the body of a published list into prefixes;
   `feed::is_known_parser` answers whether the crate knows a parser.
-- A crawler of the registry is a `Bot`; its category is a `BotKind`.
+- A crawler of the registry is a `Bot`; its kind is a `BotKind` and its
+  category is a `BotCategory`.
 
 ## How the lists are fetched
 

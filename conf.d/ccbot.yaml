@@ -2,6 +2,7 @@
 # https://commoncrawl.org/faq
 # IP list uses Google-style ipv4Prefix fields.
 kind: AITraining
+category: ai_bot
 name: ccbot
 vendor: "CommonCrawl"
 parser: google

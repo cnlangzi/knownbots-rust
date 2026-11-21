@@ -1,6 +1,7 @@
 # YouBot - You.com crawler that indexes the web for the You.com search engine
 # https://you.com/docs/youbot
 kind: SearchEngine
+category: search_engine
 name: youbot
 vendor: "You.com"
 ua: "YouBot"

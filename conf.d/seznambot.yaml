@@ -2,6 +2,7 @@
 # Official UA: SeznamBot/4.0
 # https://o-seznam.cz/napoveda/vyhledavani/en/seznambot-crawler/
 kind: SearchEngine
+category: search_engine
 name: seznambot
 vendor: "Seznam"
 ua: "SeznamBot"

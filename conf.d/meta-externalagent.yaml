@@ -1,6 +1,7 @@
 # Meta AI/Facebook crawler
 # https://developers.facebook.com/docs/sharing/webmasters/crawler/
 kind: AITraining
+category: ai_bot
 name: meta-externalagent
 vendor: "Meta"
 ua: "meta-externalagent"

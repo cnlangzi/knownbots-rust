@@ -2,6 +2,7 @@
 # Official UA: SemrushBot-BA (not SemrushBotBacklinks)
 # https://www.semrush.com/bot.html
 kind: SEO
+category: search_engine
 name: semrushbot-ba
 vendor: "Semrush"
 ua: "SemrushBot-BA"

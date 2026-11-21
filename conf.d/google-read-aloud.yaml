@@ -1,6 +1,7 @@
 # Google-Read-Aloud - Fetches a page and reads it aloud with text-to-speech
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-read-aloud
 kind: AIAssist
+category: ai_bot
 name: google-read-aloud
 vendor: "Google"
 parser: google

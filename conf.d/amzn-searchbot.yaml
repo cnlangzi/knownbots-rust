@@ -1,6 +1,7 @@
 # Amazon search crawler
 # https://developer.amazon.com/amazonbot
 kind: AIAssist
+category: ai_bot
 name: amzn-searchbot
 vendor: "Amazon"
 ua: "Amzn-SearchBot"

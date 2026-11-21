@@ -2,6 +2,7 @@
 # https://duckduckgo.com/duckassistbot.html
 # JSON format: https://duckduckgo.com/duckassistbot.json
 kind: AIAssist
+category: ai_bot
 name: duckassistbot
 vendor: "DuckDuckGo"
 parser: google

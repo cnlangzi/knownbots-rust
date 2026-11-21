@@ -1,6 +1,7 @@
 # APIs-Google - Notifies APIs about new content (e.g., pub/sub)
 # https://developers.google.com/crawling/docs/crawlers-fetchers/apis-user-agent
 kind: Monitor
+category: monitoring
 name: apis-google
 vendor: "Google"
 parser: google

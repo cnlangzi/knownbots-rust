@@ -1,6 +1,7 @@
 # Googlebot - Main search crawler for Google Search index
 # https://developers.google.com/search/docs/crawling-indexing/googlebot
 kind: SearchEngine
+category: search_engine
 name: googlebot
 vendor: "Google"
 parser: google

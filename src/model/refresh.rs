@@ -4,6 +4,7 @@ use std::time::SystemTime;
 
 use crate::error::RefreshFailure;
 use crate::model::bot::BotKind;
+use crate::model::category::BotCategory;
 
 /// The state of the address space of a bot.
 ///
@@ -27,8 +28,10 @@ pub struct BotRefreshStatus {
     pub name: String,
     /// The organisation that owns the bot.
     pub vendor: String,
-    /// The category of the bot.
+    /// The kind of the bot.
     pub kind: BotKind,
+    /// The coarse bucket the bot is grouped into.
+    pub category: BotCategory,
     /// The prefixes currently loaded (downloaded and stated).
     pub prefixes: usize,
     /// The derived state.

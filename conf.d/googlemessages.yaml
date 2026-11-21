@@ -1,6 +1,7 @@
 # GoogleMessages - Link previews for URLs shared in chats
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers#google-messages
 kind: SocialMedia
+category: social
 name: googlemessages
 vendor: "Google"
 parser: google

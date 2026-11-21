@@ -2,6 +2,7 @@
 # https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#google-storebot
 kind: SEO
+category: search_engine
 name: google-storebot
 vendor: "Google"
 ua: "Storebot-Google"
