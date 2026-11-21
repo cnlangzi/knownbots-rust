@@ -448,7 +448,7 @@ pub fn vendor_for(bot_name: &str) -> &'static str {
         n if n.starts_with("google")
             || n.starts_with("adsbot")
             || n.starts_with("apis-")
-            || n.starts_with("mediapartners-")
+            || n.starts_with("mediapartners")
             || n.starts_with("feedfetcher") =>
         {
             "Google"

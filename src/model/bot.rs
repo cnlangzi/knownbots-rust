@@ -98,8 +98,8 @@ pub struct Bot {
 impl Bot {
     /// Builds a bot from its definition.
     ///
-    /// The category is passed in rather than taken out of the definition: the
-    /// loader resolves it, so that no code of the crate unwraps an option.
+    /// The category is passed in rather than read out of the definition: the
+    /// loader resolves it, so that the builder never deals with an option.
     pub(crate) fn from_definition(definition: BotDefinition, category: BotCategory) -> Self {
         // An empty parser means "no structured format" — plain CIDR lines.
         // Substituting the name of the bot used to look like a custom parser

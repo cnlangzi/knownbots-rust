@@ -960,23 +960,35 @@ fn the_wire_labels_of_the_categories_are_written_once() {
 
 /// The crate guesses no category from the name of a crawler.
 ///
-/// The category of a crawler is a fact of its definition. A name that is
-/// guessed into a bucket files a crawler under a bucket nobody chose — the
-/// guess on the names of the advertising crawlers would file every crawler
-/// whose id starts with them under `ads_bot`.
+/// The bucket of a crawler is a fact of its definition. A crawler whose id
+/// looks like the id of an advertising crawler, and that states another
+/// category, keeps that category: the name of a crawler says nothing about
+/// the bucket it is grouped into.
 #[test]
 fn the_crate_guesses_no_category_from_the_name_of_a_crawler() {
-    let names = ["\"ads\"", "\"mediapartners\""];
-    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    for file in source_files(&source) {
-        let text = std::fs::read_to_string(&file).expect("the source must be readable");
-        for name in names {
-            assert!(
-                !text.contains(name),
-                "{} holds {name}, which would decide a category from the name of a crawler",
-                file.display()
-            );
-        }
+    let directory = tempfile::tempdir().unwrap();
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).unwrap();
+    let names = ["ads-something", "mediapartners-something", "shadsbot"];
+    for name in names {
+        std::fs::write(
+            conf.join(format!("{name}.yaml")),
+            format!("name: {name}\ncategory: monitoring\nua: \"{name}\"\nvendor: \"Example\"\n"),
+        )
+        .unwrap();
+    }
+
+    let bots = load_bots(Some(directory.path())).expect("the overrides must load");
+    for name in names {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(
+            bot.category,
+            BotCategory::Monitoring,
+            "the category of {name} was guessed from its name"
+        );
     }
 }
 

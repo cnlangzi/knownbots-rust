@@ -25,7 +25,7 @@ macro_rules! bot_categories {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum BotCategory {
             $(
-                #[doc = $doc]
+                #[doc = concat!($doc, " The wire label is `", $label, "`.")]
                 $variant,
             )*
         }
@@ -72,13 +72,13 @@ macro_rules! bot_categories {
 
 bot_categories! {
     SearchEngine => "search_engine",
-        "A crawler of a general web search engine. The wire label is `search_engine`.",
+        "A crawler of a general web search engine.",
     AiBot => "ai_bot",
-        "A crawler that fetches for an assistant or collects content for the training of a model. The wire label is `ai_bot`.",
+        "A crawler that fetches for an assistant or collects content for the training of a model.",
     Social => "social",
-        "A crawler of a network of sites. The wire label is `social`.",
+        "A crawler of a network of sites.",
     Monitoring => "monitoring",
-        "A crawler that watches a site, checks its security or collects its pages. The wire label is `monitoring`.",
+        "A crawler that watches a site, checks its security or collects its pages.",
     AdsBot => "ads_bot",
-        "A crawler that checks the landing pages of an advertisement. The wire label is `ads_bot`.",
+        "A crawler that checks the landing pages of an advertisement.",
 }

@@ -395,7 +395,9 @@ publishes. The `category` of a crawler is the coarse bucket the crate groups
 it into: `search_engine`, `ai_bot`, `social`, `monitoring` and `ads_bot`. The
 crate owns that vocabulary, and a host that persists a category uses the label
 of the crate. The two are facts of their own: the category is never derived
-from the kind, and a definition that states no category is incomplete.
+from the kind, and a definition that states no category is incomplete. A
+`category` the crate does not know fails the definition the same way: a
+definition of the host is skipped and reported, an embedded one fails the load.
 
 The parsers the crate knows are:
 
