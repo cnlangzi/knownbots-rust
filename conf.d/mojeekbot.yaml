@@ -2,6 +2,7 @@
 # https://www.mojeek.com/bot.html
 # JSON format: https://www.mojeek.com/mojeekbot.json
 kind: SearchEngine
+category: search_engine
 name: mojeekbot
 vendor: "Mojeek"
 parser: google

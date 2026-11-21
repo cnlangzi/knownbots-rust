@@ -2,6 +2,7 @@
 # Official UA: HetrixTools Uptime Monitoring Bot
 # https://hetrixtools.com/uptime-monitor-bot/
 kind: Monitor
+category: monitoring
 name: hetrixtools
 vendor: "HetrixTools"
 ua: "HetrixTools"

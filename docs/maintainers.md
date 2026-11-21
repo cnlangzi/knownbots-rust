@@ -50,7 +50,7 @@ holds two rows, and each of them carries its own state.
 | `checked_at` | The Unix time of the start of the run. |
 | `name` | The id of the crawler in the registry. |
 | `vendor` | The organisation that owns the crawler. |
-| `kind` | The category of the crawler. |
+| `kind` | The kind of the crawler. |
 | `source` | The source of the row: `list` (a published address space), `dns` (the reverse DNS of the vendor) or `static` (the crawler states its own prefixes). |
 | `state` | `healthy`, `failed`, `skipped` (no upstream to check) or `pending` (the check did not reach the source). |
 | `fault` | `environment` (the upstream or the network is at fault) or `crate` (the list arrived in a shape the crate mis-reads) — the two failures of the crate. |
@@ -113,6 +113,16 @@ crawler is an ordinary request.
 
 The kind of a crawler follows from the wording of the page of its vendor that
 supplied the token. The line that decides it is quoted in the last column.
+
+The definition of a crawler states its kind and its category. The category is
+the coarse bucket the crate groups the crawler into: a crawler of a search
+engine and a crawler of an engine optimisation service are `search_engine`, a
+crawler that fetches for an assistant or that collects content for the
+training of a model is `ai_bot`, a crawler of a network of sites is `social`, a
+crawler that watches a site or that checks its security is `monitoring`, and a
+crawler that checks the landing pages of an advertisement is `ads_bot`. The
+crate never guesses a category: a definition that names none is incomplete and
+fails the load.
 
 | token | vendor | kind | the page of the vendor | the line that decides the kind |
 |---|---|---|---|---|

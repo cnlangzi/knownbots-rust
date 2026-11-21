@@ -2,6 +2,7 @@
 # Official UA: SEOkicks
 # https://www.seokicks.de/robot.html
 kind: SEO
+category: search_engine
 name: seokicks
 vendor: "SEOkicks"
 ua: "SEOkicks"

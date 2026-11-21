@@ -1,6 +1,7 @@
 # Majestic SEO crawler
 # https://mj12bot.com/
 kind: SEO
+category: search_engine
 name: mj12bot
 vendor: "Majestic"
 ua: "MJ12bot"

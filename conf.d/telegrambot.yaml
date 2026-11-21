@@ -1,5 +1,6 @@
 # TelegramBot - Telegram link preview unfurler
 kind: SocialMedia
+category: social
 name: telegrambot
 vendor: "Telegram"
 ua: "TelegramBot"

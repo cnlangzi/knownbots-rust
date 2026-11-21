@@ -1,6 +1,7 @@
 # Ahrefs SEO crawler
 # https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
 kind: SEO
+category: search_engine
 name: ahrefsbot
 vendor: "Ahrefs"
 ua: "AhrefsBot"

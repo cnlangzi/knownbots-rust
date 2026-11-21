@@ -2,6 +2,7 @@
 # Official UA: SplitSignalBot
 # https://www.semrush.com/bot.html
 kind: SEO
+category: search_engine
 name: splitsignalbot
 vendor: "Semrush"
 ua: "SplitSignalBot"

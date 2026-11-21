@@ -1,6 +1,7 @@
 # Huawei AI crawler
 # https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
 kind: AITraining
+category: ai_bot
 name: petalbot
 vendor: "Huawei"
 ua: "PetalBot"

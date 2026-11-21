@@ -1,6 +1,7 @@
 # LinkedIn link preview bot
 # https://developers.cloudflare.com/bots/concepts/bot/verified-bots/
 kind: SocialMedia
+category: social
 name: linkedinbot
 vendor: "LinkedIn"
 ua: "LinkedInBot"

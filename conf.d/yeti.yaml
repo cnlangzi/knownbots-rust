@@ -2,6 +2,7 @@
 # Official UA: Yeti/1.1
 # https://searchadvisor.naver.com/guide/seo-basic-firewall
 kind: SearchEngine
+category: search_engine
 name: yeti
 vendor: "Naver"
 ua: "Yeti"

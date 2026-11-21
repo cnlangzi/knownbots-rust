@@ -2,6 +2,7 @@
 # https://docs.perplexity.ai/docs/resources/perplexity-crawlers
 # JSON format: https://www.perplexity.ai/perplexitybot.json
 kind: AITraining
+category: ai_bot
 name: perplexitybot
 vendor: "Perplexity"
 parser: google

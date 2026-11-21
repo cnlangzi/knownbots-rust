@@ -1,6 +1,7 @@
 # Google-CloudVertexBot - Owner-requested crawls that build Vertex AI Agents
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#google-cloudvertexbot
 kind: AIAssist
+category: ai_bot
 name: google-cloudvertexbot
 vendor: "Google"
 parser: google

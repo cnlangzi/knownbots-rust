@@ -4,6 +4,7 @@
 # The names of the crawler confirm for part of its addresses only: a request
 # from an address whose name does not confirm forward fails closed.
 kind: SearchEngine
+category: search_engine
 name: baiduspider
 vendor: "Baidu"
 ua: "Baiduspider"

@@ -22,6 +22,7 @@ pub use feed::{is_known_parser, parse};
 pub use http::{AddressFamily, ClientSet, reqwest};
 pub use index::{contains_word, find_bot_by_ua};
 pub use model::bot::{Bot, BotConfigError, BotKind};
+pub use model::category::BotCategory;
 pub use model::rdns::match_domain;
 pub use model::refresh::{BotRefreshState, BotRefreshStatus};
 pub use model::registry::{EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};

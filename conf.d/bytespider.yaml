@@ -7,6 +7,7 @@
 # crawl.bytedance.com holds no address records of its own: the names never
 # confirm forward, so the crawler is not verified by them.
 kind: AITraining
+category: ai_bot
 name: bytespider
 vendor: "ByteDance"
 ua: "Bytespider"

@@ -1,6 +1,7 @@
 # Google-Site-Verification - Fetches the verification token of a site on the request of its owner
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers
 kind: Monitor
+category: monitoring
 name: google-site-verification
 vendor: "Google"
 parser: google

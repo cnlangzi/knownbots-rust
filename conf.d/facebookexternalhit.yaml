@@ -1,6 +1,7 @@
 # FacebookExternalHit - Facebook crawler for OpenGraph preview cards
 # https://developers.facebook.com/docs/sharing/webmasters/crawler/
 kind: SocialMedia
+category: social
 name: facebookexternalhit
 vendor: "Meta"
 ua: "facebookexternalhit"

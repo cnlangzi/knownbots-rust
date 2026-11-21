@@ -1,6 +1,7 @@
 # Google-InspectionTool - Search Console URL Inspection tool
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#google-inspectiontool
 kind: SearchEngine
+category: search_engine
 name: google-inspectiontool
 vendor: "Google"
 parser: google

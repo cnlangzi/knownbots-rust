@@ -49,6 +49,9 @@ Read every sentence as a first-time reader. If removing the timestamp or context
 - Every file of `conf.d/` is listed in `EMBEDDED_CONFIGS`. The contract test checks that, and every other rule the definitions have to satisfy.
 - The kind of a crawler says what it does on the web, not who owns it. `SearchEngine` is for the crawlers of a general web search engine — the ones whose pages are indexed for the results of a search and for the answers of a generative engine (SEO and GEO). A vendor that searches its own catalogue or its own corpus is no search engine in that sense.
 - A crawler that fetches for an assistant, for a product of its vendor, or on behalf of a user is `AIAssist`; a crawler that collects the content for the training of a model is `AITraining`.
+- A kind and a category are two facts: the kind is the word the upstream publishes, the category is the bucket the crate groups by. Neither is translated into the other.
+- The crate owns the coarse category vocabulary of a crawler: the five buckets and their wire labels are defined once, in the crate, and a host that persists a category uses the label of the crate. The display vocabulary of a host — the badge classes, the panel copy — stays in the host.
+- The wire label of a category is a contract: a host persists it, so it does not change inside a release line.
+- The bucket of a crawler is stated in its definition; the crate never guesses it.
 - The tests never reach the internet. The endpoints of the vendors are mocked with `wiremock`.
-- The crate carries no vocabulary of a host: the labels of an admin panel belong to the host that uses the crate.
 - The declared `rust-version` is the true minimum the crate builds with. A release line is one promise — `^0.1.0` covers every `0.1.x` — and the toolchain of the consumer is part of that promise, so the floor is lowered whenever the code allows it and never raised inside a line.

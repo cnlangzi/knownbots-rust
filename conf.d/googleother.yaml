@@ -1,6 +1,7 @@
 # GoogleOther - General Google product crawler
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#googleother
 kind: SearchEngine
+category: search_engine
 name: googleother
 vendor: "Google"
 parser: google

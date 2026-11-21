@@ -1,6 +1,7 @@
 # Pinterest bot
 # https://help.pinterest.com/articles/about-pinterest-crawler-0/
 kind: SocialMedia
+category: social
 name: pinterestbot
 vendor: "Pinterest"
 ua: "Pinterestbot"

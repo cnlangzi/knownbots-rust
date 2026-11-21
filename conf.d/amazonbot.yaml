@@ -1,6 +1,7 @@
 # Amazon AI crawler
 # https://developer.amazon.com/amazonbot
 kind: AITraining
+category: ai_bot
 name: amazonbot
 vendor: "Amazon"
 ua: "Amazonbot"

@@ -80,7 +80,7 @@ async fn validator_for(server: &MockServer) -> (tempfile::TempDir, Arc<Validator
     std::fs::write(
         conf.join("testbot.yaml"),
         format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n",
+            "name: testbot\ncategory: monitoring\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}/ips.json\"\n",
             server.uri()
         ),
     )

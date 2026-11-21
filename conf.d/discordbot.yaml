@@ -1,5 +1,6 @@
 # Discordbot - Discord link preview unfurler
 kind: SocialMedia
+category: social
 name: discordbot
 vendor: "Discord"
 ua: "Discordbot"

@@ -81,12 +81,14 @@ pub fn find_bot_by_ua(ua: &str, bots: &[Bot]) -> Option<usize> {
 mod tests {
     use super::*;
     use crate::model::bot::{Bot, BotKind};
+    use crate::model::category::BotCategory;
     use parking_lot::RwLock;
 
     fn bot(name: &str, ua: &str) -> Bot {
         Bot {
             name: name.into(),
             kind: BotKind::SearchEngine,
+            category: BotCategory::SearchEngine,
             parser: "txt".into(),
             ua: ua.into(),
             vendor: "Test".into(),

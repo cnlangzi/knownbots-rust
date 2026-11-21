@@ -1,5 +1,6 @@
 # Slackbot - Slack link preview unfurler
 kind: SocialMedia
+category: social
 name: slackbot
 vendor: "Slack"
 ua: "Slackbot"

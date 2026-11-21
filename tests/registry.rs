@@ -5,13 +5,15 @@ mod common;
 #[path = "common/dns.rs"]
 mod dns;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 
 use common::{Source, Sources};
 use dns::DNS_CRAWLERS;
-use knownbots::{BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for};
+use knownbots::{
+    BotCategory, BotKind, EMBEDDED_CONFIGS, load_bots, load_bots_with_errors, vendor_for,
+};
 
 #[cfg(feature = "full")]
 use knownbots::{Validator, ValidatorOptions};
@@ -241,7 +243,7 @@ fn an_override_replaces_the_definition_of_the_bot() {
     std::fs::create_dir_all(&conf).unwrap();
     std::fs::write(
         conf.join("googlebot.yaml"),
-        "name: googlebot\nua: \"Googlebot\"\nvendor: \"Example\"\ncustom:\n  - \"66.249.64.0/19\"\n",
+        "name: googlebot\ncategory: search_engine\nua: \"Googlebot\"\nvendor: \"Example\"\ncustom:\n  - \"66.249.64.0/19\"\n",
     )
     .unwrap();
 
@@ -798,16 +800,94 @@ fn the_definition_of_the_crawler_of_baidu_states_the_sample_it_was_confirmed_wit
 }
 
 #[test]
-fn the_categories_of_the_registry_are_known() {
+fn the_kinds_of_the_registry_are_known() {
     let bots = load_bots(None).expect("the embedded definitions must load");
     for bot in &bots {
-        assert_ne!(
-            bot.kind,
-            BotKind::Unknown,
-            "bot {} names no category",
-            bot.name
+        assert_ne!(bot.kind, BotKind::Unknown, "bot {} names no kind", bot.name);
+    }
+}
+
+/// The category of a crawler is the one its definition states.
+///
+/// The bucket of a crawler is a fact of its definition, and the crate never
+/// derives it: the crawler that reaches the registry carries the category of
+/// the document it was loaded from.
+#[test]
+fn the_category_of_a_crawler_is_the_one_its_definition_states() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    for (filename, data) in EMBEDDED_CONFIGS {
+        let document: serde_yaml::Value =
+            serde_yaml::from_str(data).expect("the definition must be YAML");
+        let name = document
+            .get("name")
+            .and_then(serde_yaml::Value::as_str)
+            .unwrap_or_else(|| panic!("{filename} names no crawler"));
+        let stated = document
+            .get("category")
+            .and_then(serde_yaml::Value::as_str)
+            .unwrap_or_else(|| panic!("{filename} states no category"));
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(
+            bot.category.as_str(),
+            stated,
+            "the crawler {name} does not carry the category its definition states"
         );
     }
+}
+
+/// The census of the registry by category.
+///
+/// The category of a crawler is a fact of its definition, so the census is a
+/// fact of the registry as well: a crawler the registry gains moves the
+/// numbers, and the numbers are the buckets a host reads.
+#[test]
+fn the_census_of_the_registry_by_category_is_fixed() {
+    let bots = load_bots(None).expect("the embedded definitions must load");
+
+    let mut census: HashMap<BotCategory, Vec<&str>> = HashMap::new();
+    for bot in &bots {
+        census
+            .entry(bot.category)
+            .or_default()
+            .push(bot.name.as_str());
+    }
+    for names in census.values_mut() {
+        names.sort_unstable();
+    }
+
+    let count = |category: BotCategory| census.get(&category).map_or(0, Vec::len);
+    assert_eq!(count(BotCategory::SearchEngine), 27);
+    assert_eq!(count(BotCategory::AiBot), 29);
+    assert_eq!(count(BotCategory::Social), 11);
+    assert_eq!(count(BotCategory::Monitoring), 8);
+    assert_eq!(count(BotCategory::AdsBot), 4);
+    assert_eq!(
+        count(BotCategory::SearchEngine)
+            + count(BotCategory::AiBot)
+            + count(BotCategory::Social)
+            + count(BotCategory::Monitoring)
+            + count(BotCategory::AdsBot),
+        bots.len(),
+        "every crawler of the registry is in one of the five buckets"
+    );
+
+    let ads = census
+        .get(&BotCategory::AdsBot)
+        .cloned()
+        .unwrap_or_default();
+    assert_eq!(
+        ads,
+        [
+            "adsbot",
+            "adsbot-mobile",
+            "mediapartners-google",
+            "oai-adsbot"
+        ]
+    );
 }
 
 /// The API of the crate carries the registry, the validator and the result of a
@@ -817,7 +897,7 @@ fn the_categories_of_the_registry_are_known() {
 #[allow(clippy::type_complexity)]
 fn the_api_carries_the_registry_the_validator_and_the_result() {
     use knownbots::{
-        Bot, BotConfigError, BotKind, BotRefreshState, BotRefreshStatus, ConfigError,
+        Bot, BotCategory, BotConfigError, BotKind, BotRefreshState, BotRefreshStatus, ConfigError,
         RefreshFailure, Validator, ValidatorOptions, VerifyResult, VerifyStatus, contains_word,
         find_bot_by_ua, load_bots, load_bots_with_errors, match_domain, vendor_for,
     };
@@ -825,6 +905,7 @@ fn the_api_carries_the_registry_the_validator_and_the_result() {
     fn assert_type<T>() {}
 
     assert_type::<Bot>();
+    assert_type::<BotCategory>();
     assert_type::<BotKind>();
     assert_type::<BotConfigError>();
     assert_type::<BotRefreshState>();
@@ -844,29 +925,70 @@ fn the_api_carries_the_registry_the_validator_and_the_result() {
     let _: fn(&str, &[Bot]) -> Option<usize> = find_bot_by_ua;
 }
 
-/// The library carries the category of a bot, but not the vocabulary of the
-/// host that uses it: the wire labels of an admin panel belong to that host.
+/// The wire label of a category is written once, in the crate.
+///
+/// The crate owns the vocabulary of the categories, so that a host that
+/// persists a label reads the label of the crate. A label that is written
+/// twice is a label that can drift: one of the copies answers a host and the
+/// other one answers a test, and the difference between them is silent.
 #[test]
-fn the_api_carries_no_category_label() {
+fn the_wire_labels_of_the_categories_are_written_once() {
     // The labels are searched as the string literals they would be written as,
     // so that a word in a comment does not fail the suite.
     let labels = [
         "\"search_engine\"",
-        "\"ads_bot\"",
         "\"ai_bot\"",
         "\"social\"",
         "\"monitoring\"",
+        "\"ads_bot\"",
     ];
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut counts = vec![0usize; labels.len()];
     for file in source_files(&source) {
         let text = std::fs::read_to_string(&file).expect("the source must be readable");
-        for label in labels {
-            assert!(
-                !text.contains(label),
-                "{} holds the label {label}, which belongs to the host of the crate",
-                file.display()
-            );
+        for (index, label) in labels.iter().enumerate() {
+            counts[index] += text.matches(label).count();
         }
+    }
+    for (label, count) in labels.iter().zip(counts) {
+        assert_eq!(
+            count, 1,
+            "the label {label} is written {count} times in src/ — it belongs to the table of the categories"
+        );
+    }
+}
+
+/// The crate guesses no category from the name of a crawler.
+///
+/// The bucket of a crawler is a fact of its definition. A crawler whose id
+/// looks like the id of an advertising crawler, and that states another
+/// category, keeps that category: the name of a crawler says nothing about
+/// the bucket it is grouped into.
+#[test]
+fn the_crate_guesses_no_category_from_the_name_of_a_crawler() {
+    let directory = tempfile::tempdir().unwrap();
+    let conf = directory.path().join("conf.d");
+    std::fs::create_dir_all(&conf).unwrap();
+    let names = ["ads-something", "mediapartners-something", "shadsbot"];
+    for name in names {
+        std::fs::write(
+            conf.join(format!("{name}.yaml")),
+            format!("name: {name}\ncategory: monitoring\nua: \"{name}\"\nvendor: \"Example\"\n"),
+        )
+        .unwrap();
+    }
+
+    let bots = load_bots(Some(directory.path())).expect("the overrides must load");
+    for name in names {
+        let bot = bots
+            .iter()
+            .find(|bot| bot.name == name)
+            .unwrap_or_else(|| panic!("{name} in the registry"));
+        assert_eq!(
+            bot.category,
+            BotCategory::Monitoring,
+            "the category of {name} was guessed from its name"
+        );
     }
 }
 

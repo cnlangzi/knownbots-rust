@@ -1,6 +1,7 @@
 //! The outcome of a verification.
 
 use crate::model::bot::{Bot, BotKind};
+use crate::model::category::BotCategory;
 
 /// The outcome of a verification.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,8 +36,14 @@ pub struct VerifyResult {
     /// The organisation that owns the matched bot, empty unless the request was
     /// verified.
     pub vendor: String,
-    /// The category of the matched bot.
+    /// The kind of the bot the request names.
+    ///
+    /// The kind names what the request claims to be, so it is filled for every
+    /// outcome that names a bot. The identity of the bot — its name, its vendor
+    /// and its category — is filled only for a verified result.
     pub kind: BotKind,
+    /// The coarse bucket of the matched bot, filled only for a verified result.
+    pub category: Option<BotCategory>,
 }
 
 impl VerifyResult {
@@ -53,6 +60,7 @@ impl VerifyResult {
             name: String::new(),
             vendor: String::new(),
             kind: BotKind::Unknown,
+            category: None,
         }
     }
 
@@ -64,6 +72,7 @@ impl VerifyResult {
             name: String::new(),
             vendor: String::new(),
             kind: bot.kind,
+            category: None,
         }
     }
 
@@ -74,6 +83,7 @@ impl VerifyResult {
             name: bot.name.clone(),
             vendor: bot.vendor.clone(),
             kind: bot.kind,
+            category: Some(bot.category),
         }
     }
 }

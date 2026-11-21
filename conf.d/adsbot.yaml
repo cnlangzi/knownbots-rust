@@ -1,6 +1,7 @@
 # AdsBot - Validates ad landing page quality
 # https://developers.google.com/crawling/docs/crawlers-fetchers/google-special-case-crawlers#adsbot
 kind: Monitor
+category: ads_bot
 name: adsbot
 vendor: "Google"
 parser: google

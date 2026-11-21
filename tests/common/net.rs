@@ -109,7 +109,7 @@ pub async fn refusing_server(
     std::fs::write(
         conf.join("testbot.yaml"),
         format!(
-            "name: testbot\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}\"\n",
+            "name: testbot\ncategory: monitoring\nua: \"TestBot\"\nvendor: \"Example\"\nparser: google\nurls:\n  - \"{}\"\n",
             url(server.address().port())
         ),
     )

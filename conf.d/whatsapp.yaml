@@ -1,5 +1,6 @@
 # WhatsApp - Meta WhatsApp link preview
 kind: SocialMedia
+category: social
 name: whatsapp
 vendor: "Meta"
 ua: "WhatsApp"

@@ -2,6 +2,7 @@
 # Official UA: meta-webindexer/1.1
 # https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/
 kind: AIAssist
+category: ai_bot
 name: meta-webindexer
 vendor: "Meta"
 ua: "meta-webindexer"

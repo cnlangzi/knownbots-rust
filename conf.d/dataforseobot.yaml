@@ -2,6 +2,7 @@
 # Official UA: DataForSeoBot
 # https://dataforseo.com/dataforseo-bot
 kind: SEO
+category: search_engine
 name: dataforseobot
 vendor: "DataForSEO"
 ua: "DataForSeoBot"
